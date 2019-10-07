@@ -1,6 +1,14 @@
 {
-    "name": "Stripe/Payment",
-    "type": "shopware-frontend-plugin",
+    "name": "stripe/shopware-plugin",
+    "type": "shopware-platform-plugin",
+    "description": "Stripe payment processing for Shopware 6",
+    "version": "6.0.0",
+    "authors": [
+        {
+            "name": "Pickware GmbH",
+            "email": "info@pickware.de"
+        }
+    ],
     "repositories": [
         {
             "type": "vcs",
@@ -12,18 +20,27 @@
         }
     ],
     "require": {
-        "php": ">=5.6.4",
-        "composer/installers": "~1.0",
-        "stripe/stripe-php": "^6"
+        "php": "~7.2",
+        "stripe/stripe-php": "^7.0"
     },
     "require-dev": {
         "viison/style-guide": "*"
     },
-    "extra": {
-        "required-viison-git-hooks": {
-            "viison/style-guide": [
-                "shopware-plugin"
-            ]
+    "conflict": {
+        "shopware/storefront": "<6,>=7",
+        "shopware/administration": "<6,>=7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Stripe\\ShopwarePlugin\\": "./src"
+        },
+        "files": [
+            "./autoload-dist/PluginIsManagedByComposer.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stripe\\ShopwarePlugin\\Test\\": "./test"
         }
     },
     "scripts": {
@@ -31,12 +48,17 @@
         "phpcs:fix": "vendor/bin/phpcbf -s -n .",
         "phplint": "echo \"Linting all PHP files...\"; LINT_RETURN=0; for FILE in $(find . -regex \".*\\.php\" -not -path \"./vendor/*\"); do if ! php -l \"$FILE\"; then LINT_RETURN=1; fi; done; exit $LINT_RETURN;"
     },
-    "autoload": {
-        "psr-4": {
-            "Shopware\\Plugins\\StripePayment\\": "."
+    "extra": {
+        "shopware-plugin-class": "Stripe\\ShopwarePlugin\\StripePayment",
+        "copyright": "(c) by Pickware GmbH",
+        "label": {
+            "de-DE": "Stripe-Zahlungsabwicklung für Shopware 6",
+            "en-GB": "Stripe payment processing for Shopware 6"
         },
-        "exclude-from-classmap": [
-            "Polyfill"
-        ]
+        "required-viison-git-hooks": {
+            "viison/style-guide": [
+                "shopware-plugin"
+            ]
+        }
     }
 }

@@ -1,0 +1,16 @@
+{
+    "name": "stripe/shopware-plugin-autoloading",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Pickware GmbH",
+            "email": "info@pickware.de"
+        }
+    ],
+    "require": {
+        "stripe/stripe-php": "^7.0"
+    },
+    "config": {
+        "prepend-autoloader": false
+    }
+}
