@@ -8,6 +8,8 @@ use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
+use Stripe\ShopwarePlugin\Payment\Handler\CardPaymentHandler;
+use Stripe\ShopwarePlugin\Payment\Handler\SepaPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\SofortPaymentHandler;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -23,7 +25,10 @@ class StripePayment extends Plugin
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
         $loader->load('Payment/DependencyInjection/handler.xml');
+        $loader->load('Payment/DependencyInjection/settings.xml');
         $loader->load('Payment/DependencyInjection/stripe_api.xml');
+        $loader->load('Payment/DependencyInjection/subscriber.xml');
+        $loader->load('Payment/DependencyInjection/services.xml');
         $loader->load('Payment/DependencyInjection/util.xml');
     }
 
@@ -38,6 +43,11 @@ class StripePayment extends Plugin
     public function getStorefrontScriptPath(): string
     {
         return 'Resources/dist/storefront/js';
+    }
+
+    public function getAdministrationEntryPath(): string
+    {
+        return 'Resources/administration';
     }
 
     public function install(InstallContext $installContext): void
@@ -60,7 +70,33 @@ class StripePayment extends Plugin
             'handlerIdentifier' => SofortPaymentHandler::class,
             'pluginId' => $pluginId,
         ];
-        $this->container->get('payment_method.repository')->upsert([$sofortPaymentMethod], $context);
+        $paymentMethodRepository->upsert([$sofortPaymentMethod], $context);
+
+        // Check for existing 'Card' payment method
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', CardPaymentHandler::class));
+        $cardPaymentMethodId = $paymentMethodRepository->searchIds($criteria, $context)->firstId();
+
+        $cardPaymentMethod = [
+            'id' => $cardPaymentMethodId,
+            'name' => 'Kreditkarte (via Stripe)',
+            'handlerIdentifier' => CardPaymentHandler::class,
+            'pluginId' => $pluginId,
+        ];
+        $paymentMethodRepository->upsert([$cardPaymentMethod], $context);
+
+        // Check for existing 'Sepa' payment method
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', SepaPaymentHandler::class));
+        $sepaPaymentMethodId = $paymentMethodRepository->searchIds($criteria, $context)->firstId();
+
+        $sepaPaymentMethod = [
+            'id' => $sepaPaymentMethodId,
+            'name' => 'SEPA-Lastschrift (via Stripe)',
+            'handlerIdentifier' => SepaPaymentHandler::class,
+            'pluginId' => $pluginId,
+        ];
+        $paymentMethodRepository->upsert([$sepaPaymentMethod], $context);
 
         // TODO: Activate/deactivate payment methods upon plugin activation/deactivation and uninstall
 

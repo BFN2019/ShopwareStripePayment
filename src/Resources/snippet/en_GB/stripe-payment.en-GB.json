@@ -1,3 +1,18 @@
 {
-    "foo": "baz"
+    "stripe_payment": {
+        "form": {
+            "required": "* required",
+            "card": {
+                "holder": "Card holder",
+                "number": "Card number",
+                "cvc": "CVC",
+                "expiry": "Valid until (month/year)",
+                "save_card": "Save card",
+                "card_selection": {
+                    "new_card": "New card",
+                    "saved_cards": "Saved cards"
+                }
+            }
+        }
+    }
 }

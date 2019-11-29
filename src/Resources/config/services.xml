@@ -11,5 +11,22 @@
         <service id="Stripe\ShopwarePlugin\Resources\snippet\en_GB\SnippetFile_en_GB">
             <tag name="shopware.snippet.file"/>
         </service>
+
+        <service id="Stripe\ShopwarePlugin\Payment\Controller\PersistPaymentMethodSettingsController" public="true">
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\Services\SessionService"/>
+
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="Stripe\ShopwarePlugin\Payment\Controller\WebhookController" public="true">
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory"/>
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\Handler\WebhookHandler"/>
+
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
     </services>
 </container>

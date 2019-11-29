@@ -1,0 +1,10 @@
+{% block sw_order_detail_base_secondary_info_order_overview_contents %}
+    {% parent %}
+    <template v-if="hasStripePaymentIntentOrCharge">
+        <div class="stripe-payment">
+            <a v-bind:href="'https://dashboard.stripe.com/payments/' + getStripePaymentIntentIdOrChargeId" target="_blank" class="stripe-button">
+                {{ $tc('stripe_payment.open_stripe_dashboard') }}
+            </a>
+        </div>
+    </template>
+{% endblock %}

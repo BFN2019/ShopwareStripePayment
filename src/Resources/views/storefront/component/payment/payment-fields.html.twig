@@ -1,9 +1,210 @@
 {% sw_extends '@Storefront/component/payment/payment-fields.html.twig' %}
 
 {% block component_payment_method_description %}
-    {% if payment.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\SofortPaymentHandler') %}
-        <h1>THIS IS STRIPE SOFORT!</h1>
-    {% else %}
-        {{ parent() }}
+    {{ parent() }}
+    {% set stripeData = page.extensions.stripeData.data %}
+    {% if payment.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\CardPaymentHandler') %}
+        <div class="stripe-payment-card-form">
+            <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
+                <div class="alert--icon">
+                    <i class="icon--element icon--cross"></i>
+                </div>
+                <div class="alert--content error-content"></div>
+            </div>
+            <div>
+                {% if stripeData.allowSavingCreditCard or stripeData.availableCards|length > 0 %}
+                    <div class="panel--tr saved-cards">
+                        <label>
+                            <span>{{ "stripe_payment.form.card.card_selection.saved_cards"|trans }}</span>
+                            <div class="select-field">
+                                <select class="stripe-saved-cards panel--td">
+                                    <option value="new" selected>
+                                        <span>{{ "stripe_payment.form.card.card_selection.new_card"|trans }}</span>
+                                    </option>
+                                    {% for card in stripeData.availableCards %}
+                                        <option value="{{ card.id }}">
+                                            {{ card.name }} | {{ card.brand }} | &bull;&bull;&bull;&bull;{{ card.last4 }} | {{ "%02d"|format(card.exp_month) }}/{{ card.exp_year }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </label>
+                    </div>
+                {% endif %}
+                {# Card holder #}
+                <div class="panel--tr stripe-card-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.card.holder"|trans }} *</span>
+                        <input type="text" size="20" class="stripe-card-holder panel--td" value="{{ context.customer.firstName }} {{ context.customer.lastName }}">
+                    </label>
+                </div>
+                {# Card number #}
+                <div class="panel--tr stripe-card-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.card.number"|trans }} *</span>
+                        <div class="stripe-element-card-number panel--td"><!-- Stripe element is inserted here --></div>
+                    </label>
+                </div>
+                {# Expiry date #}
+                <div class="panel--tr stripe-card-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.card.expiry"|trans }} *</span>
+                        <div class="stripe-element-card-expiry panel--td"><!-- Stripe element is inserted here --></div>
+                    </label>
+                </div>
+                {# CVC #}
+                <div class="panel--tr stripe-card-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.card.cvc"|trans }} *</span>
+                        <div class="stripe-element-card-cvc panel--td"><!-- Stripe element is inserted here --></div>
+                    </label>
+                    <div class="stripe-card-cvc--help help panel--td"
+                         data-modalbox="true"
+                         data-content="{url controller=StripePaymentCard action=cvcInfo forceSecure}"
+                         data-mode="ajax"
+                         data-height="430"
+                         data-width="650">
+                    </div>
+                </div>
+                {% if customerAccountMode == 0 and stripeData.allowSavingCreditCard %}
+                {# Save data #}
+                <div class="panel--tr stripe-card-field">
+                    <label>
+                            <span class="outer-checkbox">
+                                <div class="checkbox">
+                                    <input class="stripe-save-card" type="checkbox">
+                                    <span class="checkbox--state"></span>
+                                </div>
+                            </span>
+                        <span class="checkox-label">{{ "stripe_payment.form.card.save_card"|trans }}</span>
+                    </label>
+                </div>
+                {% endif %}
+                {# A box for displaying validation errors #}
+                <div class="stripe-payment-validation-error-box alert is--error is--rounded" style="display: none;">
+                    <div class="alert--icon">
+                        <i class="icon--element icon--cross"></i>
+                    </div>
+                    <div class="alert--content error-content"></div>
+                </div>
+                {{ "stripe_payment.form.required"|trans }}
+            </div>
+        </div>
+        <template data-stripe-payment-card-selection data-stripe-payment-card-selection-options="{{
+            stripeData|merge({'persistUrl': path('frontend.checkout.stripePayment.persist')})|json_encode()|escape('html_attr')
+        }}"></template>
+    {% endif %}
+    {% if payment.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\SepaPaymentHandler') %}
+        <div class="stripe-payment-sepa-form">
+            <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
+                <div class="alert--icon">
+                    <i class="icon--element icon--cross"></i>
+                </div>
+                <div class="alert--content error-content"></div>
+            </div>
+            <div>
+                {% if stripeData.allowSavingBankAccounts or (stripeData.availableSepaBankAccounts and stripeData.availableSepaBankAccounts|length > 0) %}
+                    <div class="panel--tr saved-bank-accounts">
+                        <label>
+                            <span>{{ "stripe_payment.form.card.card_selection.saved_cards"|trans }}</span>
+                            <div class="select-field">
+                                <select class="stripe-save-bank-account panel--td">
+                                    <option value="new" selected>
+                                        <span>{{ "stripe_payment.form.card.card_selection.new_bank_account"|trans }}</span>
+                                    </option>
+                                    {% for sepaBankAccount in stripeData.availableSepaBankAccounts %}
+                                        <option value="{{ sepaBankAccount.id }}">
+                                            {{ sepaBankAccount.name }} | {{ sepaBankAccount.country }}&bull;&bull;&bull;&bull;{{ sepaBankAccount.last4 }} | {{ sepaBankAccount.mandate_reference }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </label>
+                    </div>
+                {% endif %}
+                {# IBAN #}
+                <div class="panel--tr stripe-sepa-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.sepa.iban"|trans }} *</span>
+                        <div class="stripe-element-sepa-iban panel--td"><!-- Stripe element is inserted here --></div>
+                    </label>
+                </div>
+                {# Account owner #}
+                <div class="panel--tr stripe-sepa-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.sepa.account_owner"|trans }} *</span>
+                        <input type="text" class="stripe-sepa-account-owner panel--td is--required" name="account_owner" required="required" value="{{ context.customer.activeBillingAddress.firstName }} {{ context.customer.activeBillingAddress.lastName }}">
+                    </label>
+                </div>
+                {# EMail #}
+                <div class="panel--tr stripe-sepa-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.sepa.email"|trans }} *</span>
+                        <input type="text" class="stripe-sepa-email panel--td is--required" name="email" required="required" value="{{ context.customer.email }}">
+                    </label>
+                </div>
+                {# Street #}
+                <div class="panel--tr stripe-sepa-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.sepa.street"|trans }} *</span>
+                        <input type="text" class="stripe-sepa-street panel--td is--required" name="street" required="required" value="{{ context.customer.activeBillingAddress.street }}">
+                    </label>
+                </div>
+                {# ZIP code #}
+                <div class="panel--tr stripe-sepa-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.sepa.zip_code"|trans }} *</span>
+                        <input type="text" class="stripe-sepa-zip-code panel--td is--required" name="zip_code" required="required" value="{{ context.customer.activeBillingAddress.zipcode }}">
+                    </label>
+                </div>
+                {# City #}
+                <div class="panel--tr stripe-sepa-field">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.sepa.city"|trans }} *</span>
+                        <input type="text" class="stripe-sepa-city panel--td is--required" name="city" required="required" value="{{ context.customer.activeBillingAddress.city }}">
+                    </label>
+                </div>
+                {# Country #}
+                <div class="panel--tr stripe-sepa-field country-selection">
+                    <label>
+                        <span class="panel--td">{{ "stripe_payment.form.sepa.country"|trans }} *</span>
+                        <div class="select-field">
+                            <select class="stripe-sepa-country panel--td is--required" name="country" required="required">
+                                {% for country in stripeData.sepaCountryList %}
+                                    <option value="{{ country.iso }}" {% if country.id is same as (context.customer.activeBillingAddress.countryId) %}selected="seclected"{% endif %}>
+                                        {{ country.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </label>
+                </div>
+                {% if customerAccountMode == 0 and stripeData.allowSavingBankAccounts %}
+                    {# Save data #}
+                    <div class="panel--tr stripe-sepa-field">
+                        <label>
+                            <span class="outer-checkbox">
+                                <div class="checkbox">
+                                    <input class="stripe-save-sepa" type="checkbox">
+                                    <span class="checkbox--state"></span>
+                                </div>
+                            </span>
+                            <span class="checkox-label">{{ "stripe_payment.form.sepa.save_sepa_bank_account"|trans }}</span>
+                        </label>
+                    </div>
+                {% endif %}
+                {# A box for displaying validation errors #}
+                <div class="stripe-payment-validation-error-box alert is--error is--rounded" style="display: none;">
+                    <div class="alert--icon">
+                        <i class="icon--element icon--cross"></i>
+                    </div>
+                    <div class="alert--content error-content"></div>
+                </div>
+                {{ "stripe_payment.form.required"|trans }}
+            </div>
+        </div>
+        <template data-stripe-payment-sepa-selection data-stripe-payment-sepa-selection-options="{{
+            stripeData|merge({'persistUrl': path('frontend.checkout.stripePayment.persist')})|json_encode()|escape('html_attr')
+        }}"></template>
     {% endif %}
 {% endblock %}

@@ -1,3 +1,18 @@
 {
-    "foo": "bar"
+    "stripe_payment": {
+        "form": {
+            "required": "* Pflichtfeld",
+            "card": {
+                "holder": "Karteninhaber",
+                "number": "Kartennummer",
+                "cvc": "CVC",
+                "expiry": "Gültig bis (Monat/Jahr)",
+                "save_card": "Karte speichern",
+                "card_selection": {
+                    "new_card": "Neue Karte",
+                    "saved_cards": "Gespeicherte Karten"
+                }
+            }
+        }
+    }
 }

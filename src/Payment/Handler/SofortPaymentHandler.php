@@ -23,17 +23,13 @@ use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApi;
+use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory;
 use Stripe\ShopwarePlugin\Payment\Util\PaymentContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
-    /**
-     * @var StripeApi
-     */
-    private $stripeApi;
-
     /**
      * @var PaymentContext
      */
@@ -53,15 +49,19 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
      * @var OrderTransactionStateHandler
      */
     private $orderTransactionStateHandler;
+    /**
+     * @var StripeApiFactory
+     */
+    private $stripeApiFactory;
 
     public function __construct(
-        StripeApi $stripeApi,
+        StripeApiFactory $stripeApiFactory,
         PaymentContext $paymentContext,
         EntityRepositoryInterface $orderAddressRepository,
         EntityRepositoryInterface $currencyRepository,
         OrderTransactionStateHandler $orderTransactionStateHandler
     ) {
-        $this->stripeApi = $stripeApi;
+        $this->stripeApiFactory = $stripeApiFactory;
         $this->paymentContext = $paymentContext;
         $this->orderAddressRepository = $orderAddressRepository;
         $this->currencyRepository = $currencyRepository;
@@ -81,24 +81,29 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
         try {
             self::validateCustomer($customer);
 
-            $source = $this->stripeApi->createSource([
-                'type' => 'sofort',
-                'amount' => self::getPayableAmount($orderTransaction),
-                'currency' => $this->getCurrency($order, $context)->getIsoCode(),
-                'owner' => [
-                    'name' => self::getCustomerName($salesChannelContext->getCustomer()),
-                ],
-                'sofort' => [
-                    'country' => $this->getBillingCountry($order, $context)->getIso(),
-                    // 'statement_descriptor' => 'TODO',
-                ],
-                'redirect' => [
-                    'return_url' => $transaction->getReturnUrl(),
-                ],
-                'metadata' => [
-                    'shopware_order_transaction_id' => $orderTransaction->getId(),
-                ],
-            ]);
+            $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
+            $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
+
+            $source = $stripeApi->createSource(
+                [
+                    'type' => 'sofort',
+                    'amount' => self::getPayableAmount($orderTransaction),
+                    'currency' => $this->getCurrency($order, $context)->getIsoCode(),
+                    'owner' => [
+                        'name' => self::getCustomerName($salesChannelContext->getCustomer()),
+                    ],
+                    'sofort' => [
+                        'country' => $this->getBillingCountry($order, $context)->getIso(),
+                        // 'statement_descriptor' => 'TODO',
+                    ],
+                    'redirect' => [
+                        'return_url' => $transaction->getReturnUrl(),
+                    ],
+                    'metadata' => [
+                        'shopware_order_transaction_id' => $orderTransaction->getId(),
+                    ],
+                ]
+            );
             if ($source->redirect->status !== 'pending') {
                 throw new InvalidSourceRedirectException($source, $orderTransaction);
             }
@@ -125,7 +130,7 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
             self::validateCustomer($customer);
 
             // Validate the Stripe source
-            $source = $this->paymentContext->getStripeSource($orderTransaction, $context);
+            $source = $this->paymentContext->getStripeSource($orderTransaction, $salesChannelContext);
             if (!$source || $source->client_secret !== $request->get('client_secret')) {
                 throw new InvalidTransactionException($orderTransaction->getId());
             }
@@ -155,10 +160,14 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
             //     $chargeParams['receipt_email'] = $customer->getEmail();
             // }
 
-            $charge = $this->stripeApi->createCharge($chargeParams);
+            $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
+            $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
+
+            $charge = $stripeApi->createCharge($chargeParams);
             $this->paymentContext->saveStripeCharge($orderTransaction, $context, $charge);
             switch ($charge->status) {
                 case 'succeeded':
+                    // TODO: check if already paid
                     $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
                     break;
                 case 'failed':

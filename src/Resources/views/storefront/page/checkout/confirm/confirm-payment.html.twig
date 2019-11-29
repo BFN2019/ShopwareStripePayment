@@ -1,9 +1,12 @@
 {% sw_extends '@Storefront/page/checkout/confirm/confirm-payment.html.twig' %}
 
-{% block page_checkout_confirm_payment_inner %}
+{% block page_checkout_confirm_payment_current_text %}
     {{ parent() }}
-{% endblock %}
-
-{% block page_checkout_confirm_payment_current %}
-    {{ parent() }}
+    {% if context.paymentMethod.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\CardPaymentHandler') %}
+        {% set stripeData = page.extensions.stripeData.data %}
+        {% if stripeData.selectedCard %}
+            <br><br>
+            <strong>{{ stripeData.selectedCard.name }} | {{ stripeData.selectedCard.brand }} | &bull;&bull;&bull;&bull;{{ stripeData.selectedCard.last4 }} | {{ "%02d"|format(stripeData.selectedCard.exp_month) }}/{{ stripeData.selectedCard.exp_year }}</strong>
+        {% endif %}
+    {% endif %}
 {% endblock %}
