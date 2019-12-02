@@ -9,13 +9,16 @@ use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Checkout\Payment\Exception\InvalidOrderException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Stripe\Charge;
 use Stripe\PaymentIntent;
+use Stripe\ShopwarePlugin\Payment\Settings\SettingsService;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory;
 use Stripe\ShopwarePlugin\Payment\Util\PaymentContext;
+use Stripe\ShopwarePlugin\Payment\Util\Util;
 use Stripe\Source;
 
 class WebhookHandler
@@ -33,21 +36,50 @@ class WebhookHandler
      * @var PaymentContext
      */
     private $paymentContext;
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $customerRepository;
+    /**
+     * @var StripeApiFactory
+     */
+    private $stripeApiFactory;
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $currencyRepository;
+    /**
+     * @var SettingsService
+     */
+    private $settingsService;
 
     public function __construct(
         DefinitionInstanceRegistry $definitionRegistry,
         OrderTransactionStateHandler $orderTransactionStateHandler,
         OrderTransactionDefinition $orderTransactionDefinition,
-        PaymentContext $paymentContext
+        PaymentContext $paymentContext,
+        EntityRepositoryInterface $customerRepository,
+        StripeApiFactory $stripeApiFactory,
+        EntityRepositoryInterface $currencyRepository,
+        SettingsService $settingsService
     ) {
         $this->orderTransactionRepo = $definitionRegistry->getRepository($orderTransactionDefinition->getEntityName());
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->paymentContext = $paymentContext;
+        $this->customerRepository = $customerRepository;
+        $this->stripeApiFactory = $stripeApiFactory;
+        $this->currencyRepository = $currencyRepository;
+        $this->settingsService = $settingsService;
     }
 
     public function handlePaymentIntentSuccessful(PaymentIntent $paymentIntent, Context $context): void
     {
-        $orderTransaction = $this->getOrderTransactionForPaymentIntent($paymentIntent, $context);
+        try {
+            $orderTransaction = $this->getOrderTransactionForPaymentIntent($paymentIntent, $context);
+        } catch (\Exception $e) {
+            // Nothing to do, no order exists
+            return;
+        }
 
         // Already paid, nothing to do
         if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
@@ -65,10 +97,15 @@ class WebhookHandler
 
     public function handlePaymentIntentUnsuccessful(PaymentIntent $paymentIntent, Context $context): void
     {
-        $orderTransaction = $this->getOrderTransactionForPaymentIntent($paymentIntent, $context);
+        try {
+            $orderTransaction = $this->getOrderTransactionForPaymentIntent($paymentIntent, $context);
+        } catch (\Exception $e) {
+            // Nothing to do, no order exists
+            return;
+        }
 
-        // Already canceled, nothing to do
-        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'canceled') { // TODO: correct name?
+        // Already cancelled, nothing to do
+        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'cancelled') { // TODO: correct name?
             return;
         }
         $this->orderTransactionStateHandler->cancel($orderTransaction->getId(), $context);
@@ -76,7 +113,12 @@ class WebhookHandler
 
     public function handleChargeSuccessful(Charge $charge, Context $context): void
     {
-        $orderTransaction = $this->getOrderTransactionForCharge($charge, $context);
+        try {
+            $orderTransaction = $this->getOrderTransactionForCharge($charge, $context);
+        } catch (\Exception $e) {
+            // Nothing to do, no order exists
+            return;
+        }
 
         // Already paid, nothing to do
         if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
@@ -93,10 +135,15 @@ class WebhookHandler
 
     public function handleChargeUnsuccessful(Charge $charge, Context $context): void
     {
-        $orderTransaction = $this->getOrderTransactionForCharge($charge, $context);
+        try {
+            $orderTransaction = $this->getOrderTransactionForCharge($charge, $context);
+        } catch (\Exception $e) {
+            // Nothing to do, no order exists
+            return;
+        }
 
-        // Already canceled, nothing to do
-        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'canceled') {
+        // Already cancelled, nothing to do
+        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'cancelled') {
             return;
         }
         $this->orderTransactionStateHandler->cancel($orderTransaction->getId(), $context);
@@ -104,30 +151,84 @@ class WebhookHandler
 
     public function handleSourceChargable(Source $source, Context $context): void
     {
-        $orderTransaction = $this->getOrderTransactionForSource($source, $context);
+        try {
+            $orderTransaction = $this->getOrderTransactionForSource($source, $context);
+        } catch (\Exception $e) {
+            // Nothing to do, no order exists
+            return;
+        }
 
-        // TODO
-        // $order = orderRepo->search();
-        // $customer = $order->getOrderCustomer()->getCustomer();
-        // $stripeCustomerId = 123;
-        // $statementDescriptor = 123;
-        // $receiptEmails;
-        $chargeData = [
+        $order = $orderTransaction->getOrder();
+        $customer = $order->getOrderCustomer()->getCustomer();
+
+        $salesChannelId = $context->getSource()->getSalesChannelId();
+        $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
+        $stripeCustomer = Util::getStripeCustomer(
+            $this->customerRepository,
+            $customer,
+            $stripeApi,
+            $context
+        );
+
+        $chargeConfig = [
             'source' => $source->id,
             'amount' => self::getPayableAmount($orderTransaction),
             'currency' => mb_strtolower($this->getCurrency($order, $context)->getIsoCode()),
-            'description' => sprintf('%s / Customer %s', $customer->getEmail(), $customer->getCustomerNumber()),
+            'metadata' => [
+                'shopware_order_transaction_id' => $orderTransaction->getId(),
+            ],
+            'description' => sprintf(
+                '%s / Customer %s / Order %s',
+                $customer->getEmail(),
+                $customer->getCustomerNumber(),
+                $order->getOrderNumber()
+            ),
         ];
 
-        // TODO: create charge
+        if ($stripeCustomer) {
+            $chargeConfig['customer'] = $stripeCustomer->id;
+        }
+        $statementDescriptor = mb_substr(
+            $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
+            0,
+            22
+        );
+        if ($statementDescriptor) {
+            $chargeConfig['statement_descriptor'] = $statementDescriptor;
+        }
+        if ($this->settingsService->getConfigValue('sendStripeChargeEmails', $salesChannelId)) {
+            $chargeConfig['receipt_email'] = $customer->getEmail();
+        }
+
+        $charge = $stripeApi->createCharge($chargeConfig);
+
+        if ($charge->status !== 'succeeded') {
+            if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'cancelled') {
+                return;
+            }
+            $this->orderTransactionStateHandler->cancel($orderTransaction->getId(), $context);
+
+            return;
+        }
+
+        // Already paid, nothing to do
+        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
+            return;
+        }
+        $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
     }
 
     public function handleSourceUnsuccessful(Source $source, Context $context): void
     {
-        $orderTransaction = $this->getOrderTransactionForSource($source, $context);
+        try {
+            $orderTransaction = $this->getOrderTransactionForSource($source, $context);
+        } catch (\Exception $e) {
+            // Nothing to do, no order exists
+            return;
+        }
 
-        // Already canceled, nothing to do
-        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'canceled') {
+        // Already cancelled, nothing to do
+        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'cancelled') {
             return;
         }
         $this->orderTransactionStateHandler->cancel($orderTransaction->getId(), $context);
@@ -155,7 +256,10 @@ class WebhookHandler
     private function getOrderTransactionForSource(Source $source, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria();
-        $criteria->addAssociation('order');
+        $criteria->addAssociations([
+            'order',
+            'order.orderCustomer.customer',
+        ]);
         $criteria->addFilter(
             new EqualsFilter(
                 'customFields.stripe_payment_context.payment.source_id',
@@ -174,6 +278,7 @@ class WebhookHandler
     private function getOrderTransactionForCharge(Charge $charge, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria();
+        $criteria->addAssociation('order');
         $criteria->addFilter(
             new EqualsFilter(
                 'customFields.stripe_payment_context.payment.charge_id',
@@ -192,6 +297,7 @@ class WebhookHandler
     private function getOrderTransactionForPaymentIntent(PaymentIntent $paymentIntent, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria();
+        $criteria->addAssociation('order');
         $criteria->addFilter(
             new EqualsFilter(
                 'customFields.stripe_payment_context.payment.payment_intent_id',

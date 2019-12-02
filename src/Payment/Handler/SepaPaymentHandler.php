@@ -108,7 +108,7 @@ class SepaPaymentHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
             $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
 
-            $stripeCustomer = Util::getOrCreateCustomer(
+            $stripeCustomer = Util::getOrCreateStripeCustomer(
                 $this->customerRepository,
                 $customer,
                 $stripeApi,
@@ -152,7 +152,7 @@ class SepaPaymentHandler implements AsynchronousPaymentHandlerInterface
             }
 
             if ($stripeSession->saveBankAccountForFutureCheckouts) {
-                // Add the card to the Stripe customer
+                // Add the bank account to the Stripe customer
                 $paymentIntentConfig['save_payment_method'] = $stripeSession->saveBankAccountForFutureCheckouts;
             }
 
@@ -196,6 +196,9 @@ class SepaPaymentHandler implements AsynchronousPaymentHandlerInterface
                 // Redirect directly to the finalize step, we need to update the order status via a webhook
 
                 $this->paymentContext->saveStripePaymentIntent($orderTransaction, $context, $paymentIntent);
+                if (count($paymentIntent->charges->data) > 0) {
+                    $this->paymentContext->saveStripeCharge($orderTransaction, $context, $paymentIntent->charges->data[0]);
+                }
 
                 $parameters = http_build_query([
                     self::STRIPE_REQUEST_PARAMETER_PAYMENT_INTENT_CLIENT_SECRET => $paymentIntent->client_secret,

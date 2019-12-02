@@ -3,7 +3,7 @@
 {% block component_payment_method_description %}
     {{ parent() }}
     {% set stripeData = page.extensions.stripeData.data %}
-    {% if payment.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\CardPaymentHandler') %}
+    {% if payment.formattedHandlerIdentifier is same as('handler_stripe_sepapaymenthandler') %}
         <div class="stripe-payment-card-form">
             <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
                 <div class="alert--icon">
@@ -87,14 +87,16 @@
                     </div>
                     <div class="alert--content error-content"></div>
                 </div>
-                {{ "stripe_payment.form.required"|trans }}
+                <div class="panel--tr stripe-card-field">
+                    {{ "stripe_payment.form.required"|trans }}
+                </div>
             </div>
         </div>
         <template data-stripe-payment-card-selection data-stripe-payment-card-selection-options="{{
             stripeData|merge({'persistUrl': path('frontend.checkout.stripePayment.persist')})|json_encode()|escape('html_attr')
         }}"></template>
     {% endif %}
-    {% if payment.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\SepaPaymentHandler') %}
+    {% if payment.formattedHandlerIdentifier is same as('handler_stripe_cardpaymenthandler') %}
         <div class="stripe-payment-sepa-form">
             <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
                 <div class="alert--icon">
@@ -108,13 +110,13 @@
                         <label>
                             <span>{{ "stripe_payment.form.card.card_selection.saved_cards"|trans }}</span>
                             <div class="select-field">
-                                <select class="stripe-save-bank-account panel--td">
+                                <select class="stripe-saved-bank-accounts panel--td">
                                     <option value="new" selected>
                                         <span>{{ "stripe_payment.form.card.card_selection.new_bank_account"|trans }}</span>
                                     </option>
                                     {% for sepaBankAccount in stripeData.availableSepaBankAccounts %}
                                         <option value="{{ sepaBankAccount.id }}">
-                                            {{ sepaBankAccount.name }} | {{ sepaBankAccount.country }}&bull;&bull;&bull;&bull;{{ sepaBankAccount.last4 }} | {{ sepaBankAccount.mandate_reference }}
+                                            {{ sepaBankAccount.name }} | {{ sepaBankAccount.country }}&bull;&bull;&bull;&bull;{{ sepaBankAccount.last4 }}
                                         </option>
                                     {% endfor %}
                                 </select>
@@ -185,7 +187,7 @@
                         <label>
                             <span class="outer-checkbox">
                                 <div class="checkbox">
-                                    <input class="stripe-save-sepa" type="checkbox">
+                                    <input class="stripe-save-bank-account" type="checkbox">
                                     <span class="checkbox--state"></span>
                                 </div>
                             </span>
@@ -200,11 +202,16 @@
                     </div>
                     <div class="alert--content error-content"></div>
                 </div>
-                {{ "stripe_payment.form.required"|trans }}
+                <div class="panel--tr stripe-sepa-field">
+                    {{ "stripe_payment.form.required"|trans }}
+                </div>
             </div>
         </div>
         <template data-stripe-payment-sepa-selection data-stripe-payment-sepa-selection-options="{{
-            stripeData|merge({'persistUrl': path('frontend.checkout.stripePayment.persist')})|json_encode()|escape('html_attr')
+            stripeData|merge({
+            'persistUrl': path('frontend.checkout.stripePayment.persist'),
+            'customerCountry': context.customer.activeBillingAddress.country.iso
+        })|json_encode()|escape('html_attr')
         }}"></template>
     {% endif %}
 {% endblock %}

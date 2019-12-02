@@ -113,30 +113,29 @@ class StripeApi
     {
         $this->initializeStripeApi();
 
-        $cardPaymentMethods = PaymentMethod::all([
+        $sepaPaymentMethods = PaymentMethod::all([
             'customer' => $stripeCustomerId,
             'type' => 'sepa_debit',
         ])->data;
 
-        $cards = array_map(
+        $sepaPaymentMethods = array_map(
             function ($paymentMethod) {
                 return [
                     'id' => $paymentMethod->id,
-                    'owner_name' => $paymentMethod->owner->name,
+                    'name' => $paymentMethod->billing_details->name,
                     'country' => $paymentMethod->sepa_debit->country,
                     'last4' => $paymentMethod->sepa_debit->last4,
-                    'mandate_reference' => $paymentMethod->sepa_debit->mandate_reference,
                 ];
             },
-            $cardPaymentMethods
+            $sepaPaymentMethods
         );
 
-        // Sort the cards by id (which correspond to the date, the card was created/added)
-        usort($cards, function ($cardA, $cardB) {
-            return strcmp($cardA['id'], $cardB['id']);
+        // Sort the sepa payment methods by id (which correspond to the date, the payment method was created/added)
+        usort($sepaPaymentMethods, function ($sepaPaymentMethodA, $sepaPaymentMethodB) {
+            return strcmp($sepaPaymentMethodA['id'], $sepaPaymentMethodB['id']);
         });
 
-        return $cards;
+        return $sepaPaymentMethods;
     }
 
     public function createCustomer(array $params): Customer

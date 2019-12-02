@@ -110,5 +110,8 @@ class PaymentContext
             ],
         ];
         $this->orderTransactionRepository->update([$orderTransactionValues], $context);
+        $customFields = $orderTransaction->getCustomFields() ?? [];
+        $customFields[self::PAYMENT_CONTEXT_KEY] = $stripePaymentContext;
+        $orderTransaction->setCustomFields($customFields);
     }
 }

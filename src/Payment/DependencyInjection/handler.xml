@@ -39,6 +39,10 @@
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition"/>
             <argument type="service" id="Stripe\ShopwarePlugin\Payment\Util\PaymentContext"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory"/>
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\Settings\SettingsService"/>
         </service>
     </services>
 </container>

@@ -222,6 +222,8 @@ export default class StripePaymentCardSelection extends Plugin {
                 return undefined;
             }
 
+            me.unmountStripeElements();
+
             event.preventDefault();
             me._client.post(me.options.persistUrl, JSON.stringify({
                 card: me.selectedCard,

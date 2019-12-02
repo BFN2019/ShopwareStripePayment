@@ -12,7 +12,7 @@ export default class StripePaymentSepaSelection extends Plugin {
 
         selectedBankAccount: null,
 
-        availableBankAccounts: [],
+        availableSepaBankAccounts: [],
 
         locale: 'en',
     };
@@ -111,7 +111,7 @@ export default class StripePaymentSepaSelection extends Plugin {
             if (type === 'iban') {
                 options = Object.assign(options, {
                     supportedCountries: ['SEPA'],
-                    placeholderCountry: 'DE', // TODO
+                    placeholderCountry: me.options.customerCountry,
                 });
             }
             const element = elements.create(type, options);
@@ -255,6 +255,7 @@ export default class StripePaymentSepaSelection extends Plugin {
             if (!me.selectedBankAccountChanged) {
                 return undefined;
             }
+            me.unmountStripeElements();
 
             event.preventDefault();
             me._client.post(me.options.persistUrl, JSON.stringify({
@@ -302,7 +303,6 @@ export default class StripePaymentSepaSelection extends Plugin {
                 me.handleStripeError('Error: ' + message);
             } else {
                 // Save the card information
-                debugger;
                 const bankAccount = result.paymentMethod.sepa_debit;
                 bankAccount.id = result.paymentMethod.id;
                 bankAccount.name = me.formEl('.stripe-sepa-account-owner').val();
@@ -381,8 +381,8 @@ export default class StripePaymentSepaSelection extends Plugin {
         }
 
         // Find the selected card
-        for (let i = 0; i < me.options.availableBankAccounts.length; i++) {
-            const selectedBankAccount = me.options.availableBankAccounts[i];
+        for (let i = 0; i < me.options.availableSepaBankAccounts.length; i++) {
+            const selectedBankAccount = me.options.availableSepaBankAccounts[i];
             if (selectedBankAccount.id !== elem.val()) {
                 continue;
             }

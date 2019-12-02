@@ -125,7 +125,6 @@ class CheckoutSubscriber implements EventSubscriberInterface
                 'sepaCountryList' => $countries,
                 'selectedBankAccount' => $stripeSession->selectedBankAccount,
                 'availableSepaBankAccounts' => $savedBankAccounts,
-                'paymentMethodHandlerIdentifier' => $salesChannelContext->getPaymentMethod()->getHandlerIdentifier(),
             ],
         ]);
 

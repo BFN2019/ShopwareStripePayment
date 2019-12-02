@@ -9,4 +9,11 @@
             <strong>{{ stripeData.selectedCard.name }} | {{ stripeData.selectedCard.brand }} | &bull;&bull;&bull;&bull;{{ stripeData.selectedCard.last4 }} | {{ "%02d"|format(stripeData.selectedCard.exp_month) }}/{{ stripeData.selectedCard.exp_year }}</strong>
         {% endif %}
     {% endif %}
+    {% if context.paymentMethod.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\SepaPaymentHandler') %}
+        {% set stripeData = page.extensions.stripeData.data %}
+        {% if stripeData.selectedBankAccount %}
+            <br><br>
+            <strong>{{ stripeData.selectedBankAccount.name }} | {{ stripeData.selectedBankAccount.country }}&bull;&bull;&bull;&bull;{{ stripeData.selectedBankAccount.last4 }}</strong>
+        {% endif %}
+    {% endif %}
 {% endblock %}

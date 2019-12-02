@@ -108,7 +108,7 @@ class CardPaymentHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
             $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
 
-            $stripeCustomer = Util::getOrCreateCustomer(
+            $stripeCustomer = Util::getOrCreateStripeCustomer(
                 $this->customerRepository,
                 $customer,
                 $stripeApi,
@@ -137,7 +137,7 @@ class CardPaymentHandler implements AsynchronousPaymentHandlerInterface
                 $paymentIntentConfig['statement_descriptor'] = $statementDescriptor;
             }
 
-            // TODO
+            // TODO: not supported in sw6?
             // Enable MOTO transaction, if configured and order is placed by shop admin (aka user has logged in via backend)
             //$isAdminRequest = isset($this->get('session')->Admin) && $this->get('session')->Admin === true;
             $isAdminRequest = false;

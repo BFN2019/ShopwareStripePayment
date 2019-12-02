@@ -72,6 +72,7 @@ class WebhookController extends AbstractController
                 $this->webhookHandler->handlePaymentIntentSuccessful($paymentIntent, $context);
                 break;
             case 'payment_intent.canceled':
+            case 'payment_intent.payment_failed':
                 $paymentIntent = $event->data->object;
                 $this->webhookHandler->handlePaymentIntentUnsuccessful($paymentIntent, $context);
                 break;
