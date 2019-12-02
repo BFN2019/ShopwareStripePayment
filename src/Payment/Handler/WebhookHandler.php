@@ -12,8 +12,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\Currency\CurrencyEntity;
-use Shopware\Core\System\StateMachine\StateMachineDefinition;
-use Shopware\Core\System\StateMachine\StateMachineEntity;
 use Stripe\Charge;
 use Stripe\PaymentIntent;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory;
@@ -47,7 +45,7 @@ class WebhookHandler
         $this->paymentContext = $paymentContext;
     }
 
-    public function handlePaymentIntentSuccessful(PaymentIntent $paymentIntent, Context $context)
+    public function handlePaymentIntentSuccessful(PaymentIntent $paymentIntent, Context $context): void
     {
         $orderTransaction = $this->getOrderTransactionForPaymentIntent($paymentIntent, $context);
 
@@ -65,18 +63,18 @@ class WebhookHandler
         $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
     }
 
-    public function handlePaymentIntentUnsuccessful(PaymentIntent $paymentIntent, Context $context)
+    public function handlePaymentIntentUnsuccessful(PaymentIntent $paymentIntent, Context $context): void
     {
         $orderTransaction = $this->getOrderTransactionForPaymentIntent($paymentIntent, $context);
 
         // Already canceled, nothing to do
-        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'canceled') {
+        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'canceled') { // TODO: correct name?
             return;
         }
         $this->orderTransactionStateHandler->cancel($orderTransaction->getId(), $context);
     }
 
-    public function handleChargeSuccessful(Charge $charge, Context $context)
+    public function handleChargeSuccessful(Charge $charge, Context $context): void
     {
         $orderTransaction = $this->getOrderTransactionForCharge($charge, $context);
 
@@ -93,7 +91,7 @@ class WebhookHandler
         $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
     }
 
-    public function handleChargeUnsuccessful(Charge $charge, Context $context)
+    public function handleChargeUnsuccessful(Charge $charge, Context $context): void
     {
         $orderTransaction = $this->getOrderTransactionForCharge($charge, $context);
 
@@ -104,7 +102,7 @@ class WebhookHandler
         $this->orderTransactionStateHandler->cancel($orderTransaction->getId(), $context);
     }
 
-    public function handleSourceChargable(Source $source, Context $context)
+    public function handleSourceChargable(Source $source, Context $context): void
     {
         $orderTransaction = $this->getOrderTransactionForSource($source, $context);
 
@@ -118,10 +116,21 @@ class WebhookHandler
             'source' => $source->id,
             'amount' => self::getPayableAmount($orderTransaction),
             'currency' => mb_strtolower($this->getCurrency($order, $context)->getIsoCode()),
-            'description' => sprintf('%s / Customer %s', $userEmail, $customerNumber),
+            'description' => sprintf('%s / Customer %s', $customer->getEmail(), $customer->getCustomerNumber()),
         ];
 
         // TODO: create charge
+    }
+
+    public function handleSourceUnsuccessful(Source $source, Context $context): void
+    {
+        $orderTransaction = $this->getOrderTransactionForSource($source, $context);
+
+        // Already canceled, nothing to do
+        if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'canceled') {
+            return;
+        }
+        $this->orderTransactionStateHandler->cancel($orderTransaction->getId(), $context);
     }
 
     /**
@@ -146,6 +155,7 @@ class WebhookHandler
     private function getOrderTransactionForSource(Source $source, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria();
+        $criteria->addAssociation('order');
         $criteria->addFilter(
             new EqualsFilter(
                 'customFields.stripe_payment_context.payment.source_id',

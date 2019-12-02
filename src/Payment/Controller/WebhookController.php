@@ -87,6 +87,11 @@ class WebhookController extends AbstractController
                 $source = $event->data->object;
                 $this->webhookHandler->handleSourceChargable($source, $context);
                 break;
+            case 'source.failed':
+            case 'source.canceled':
+                $source = $event->data->object;
+                $this->webhookHandler->handleSourceUnsuccessful($source, $context);
+                break;
             default:
                 return new Response('', 400);
         }
