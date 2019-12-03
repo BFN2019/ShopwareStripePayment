@@ -11,6 +11,88 @@
                 "card_selection": {
                     "new_card": "New card",
                     "saved_cards": "Saved cards"
+                },
+                "error": {
+                    "api_connection_error": "Cannot connect to the payment provider's server. Please try again in a little bit.",
+                    "card_declined": "Your card has been declined.",
+                    "expired_card": "Your card has expired.",
+                    "incomplete_card": "Please fill in your card details.",
+                    "incomplete_cvc": "Your card's security code is incomplete",
+                    "incomplete_expiry": "Your card's expiration date is incomplete.",
+                    "incomplete_number": "Your card number is incomplete.",
+                    "incorrect_cvc": "Your card's security code is incorrect.",
+                    "incorrect_number": "Your card number is incorrect.",
+                    "invalid_card_holder": "Please enter the card holder's name.",
+                    "invalid_cvc": "Your card's security code is invalid.",
+                    "invalid_expiry_month": "Your card's expiration date is invalid.",
+                    "invalid_expiry_month_past": "Your card's expiration date is in the past.",
+                    "invalid_expiry_year": "Your card's expiration year is invalid.",
+                    "invalid_expiry_year_past": "Your card's expiration year is in the past.",
+                    "invalid_number": "Your card number is invalid.",
+                    "processing_error": "An error occurred while processing your card. Please try again in a little bit.",
+                    "processing_error_intransient": "An error occurred while processing your card.",
+                    "title": "Error",
+                    "unexpected": "An unexpected error occurred.",
+                    "no_card_selected": "No credit card selected.",
+                    "card_not_found": "The selected credit card cannot be found."
+                },
+                "cvc_info": {
+                    "visa_mastercard": {
+                        "header": {
+                            "title": {
+                                "card": "Card",
+                                "front": "Front side"
+                            }
+                        },
+                        "title": "Visa / Mastercard",
+                        "message": "The three digit card validation code (CVC) is printed on the back of the card, on the right side of the signature field. In case the number has more than three digits, its last three digits are the CVC."
+                    },
+                    "amex": {
+                        "header": {
+                            "title": {
+                                "card": "Card",
+                                "back": "Back side"
+                            }
+                        },
+                        "title": "American Express",
+                        "message": "The four digit card validation code (CVC) is printed on the front of the card, right above the card number."
+                    }
+                }
+            },
+            "sepa": {
+                "sepa_bank_account_selection": {
+                    "new_sepa_bank_account": "Neue SEPA Bankverbindung",
+                    "saved_sepa_bank_accounts": "Gespeicherte SEPA Bankverbindungen"
+                },
+                "iban": "IBAN",
+                "account_owner": "Account owner",
+                "email": "E-Mail",
+                "street": "Address",
+                "zip_code": "Postal code",
+                "city": "City",
+                "country": "Country",
+                "mandate_info": "By signing this mandate form, you authorise (A) [creditor] and Stripe, our payment service provider, to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with the instructions from [creditor] and Stripe. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited.",
+                "error": {
+                    "incomplete_iban": "Please enter a complete IBAN.",
+                    "invalid_account_owner": "Please enter the bank account owner's name.",
+                    "invalid_city": "Please enter a city.",
+                    "invalid_country": "Please select a country.",
+                    "invalid_iban": "Please enter a valid IBAN.",
+                    "invalid_iban_country_code": "The country code of the entered IBAN is invalid.",
+                    "invalid_street": "Please enter an address.",
+                    "invalid_zip_code": "Please enter a postal code.",
+                    "title": "Error"
+                },
+                "checkout": {
+                    "finish": {
+                        "mandate_info": {
+                            "title": "SEPA direct debit mandate",
+                            "text": "The payable amount will be debited from the entered bank account within a few days. The respective SEPA direct debit mandate can be viewed via the following link.",
+                            "open_mandate_button": {
+                                "title": "Open mandate"
+                            }
+                        }
+                    }
                 }
             }
         }

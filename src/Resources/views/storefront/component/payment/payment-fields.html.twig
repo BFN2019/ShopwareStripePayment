@@ -3,7 +3,7 @@
 {% block component_payment_method_description %}
     {{ parent() }}
     {% set stripeData = page.extensions.stripeData.data %}
-    {% if payment.formattedHandlerIdentifier is same as('handler_stripe_sepapaymenthandler') %}
+    {% if payment.formattedHandlerIdentifier is same as('handler_stripe_cardpaymenthandler') %}
         <div class="stripe-payment-card-form">
             <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
                 <div class="alert--icon">
@@ -87,6 +87,7 @@
                     </div>
                     <div class="alert--content error-content"></div>
                 </div>
+
                 <div class="panel--tr stripe-card-field">
                     {{ "stripe_payment.form.required"|trans }}
                 </div>
@@ -96,7 +97,7 @@
             stripeData|merge({'persistUrl': path('frontend.checkout.stripePayment.persist')})|json_encode()|escape('html_attr')
         }}"></template>
     {% endif %}
-    {% if payment.formattedHandlerIdentifier is same as('handler_stripe_cardpaymenthandler') %}
+    {% if payment.formattedHandlerIdentifier is same as('handler_stripe_sepapaymenthandler') %}
         <div class="stripe-payment-sepa-form">
             <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
                 <div class="alert--icon">
@@ -105,14 +106,14 @@
                 <div class="alert--content error-content"></div>
             </div>
             <div>
-                {% if stripeData.allowSavingBankAccounts or (stripeData.availableSepaBankAccounts and stripeData.availableSepaBankAccounts|length > 0) %}
-                    <div class="panel--tr saved-bank-accounts">
+                {% if stripeData.allowSavingSepaBankAccounts or (stripeData.availableSepaBankAccounts and stripeData.availableSepaBankAccounts|length > 0) %}
+                    <div class="panel--tr saved-sepa-bank-accounts">
                         <label>
-                            <span>{{ "stripe_payment.form.card.card_selection.saved_cards"|trans }}</span>
+                            <span>{{ "stripe_payment.form.sepa.sepa_bank_account_selection.saved_sepa_bank_accounts"|trans }}</span>
                             <div class="select-field">
-                                <select class="stripe-saved-bank-accounts panel--td">
+                                <select class="stripe-saved-sepa-bank-accounts panel--td">
                                     <option value="new" selected>
-                                        <span>{{ "stripe_payment.form.card.card_selection.new_bank_account"|trans }}</span>
+                                        <span>{{ "stripe_payment.form.sepa.sepa_bank_account_selection.new_sepa_bank_account"|trans }}</span>
                                     </option>
                                     {% for sepaBankAccount in stripeData.availableSepaBankAccounts %}
                                         <option value="{{ sepaBankAccount.id }}">
@@ -126,7 +127,7 @@
                 {% endif %}
                 {# IBAN #}
                 <div class="panel--tr stripe-sepa-field">
-                    <label>
+                    <label style="width: 100%;">
                         <span class="panel--td">{{ "stripe_payment.form.sepa.iban"|trans }} *</span>
                         <div class="stripe-element-sepa-iban panel--td"><!-- Stripe element is inserted here --></div>
                     </label>
@@ -142,7 +143,7 @@
                 <div class="panel--tr stripe-sepa-field">
                     <label>
                         <span class="panel--td">{{ "stripe_payment.form.sepa.email"|trans }} *</span>
-                        <input type="text" class="stripe-sepa-email panel--td is--required" name="email" required="required" value="{{ context.customer.email }}">
+                        <input type="email" class="stripe-sepa-email panel--td is--required" name="email" required="required" value="{{ context.customer.email }}">
                     </label>
                 </div>
                 {# Street #}
@@ -181,13 +182,13 @@
                         </div>
                     </label>
                 </div>
-                {% if customerAccountMode == 0 and stripeData.allowSavingBankAccounts %}
+                {% if stripeData.allowSavingSepaBankAccounts %}
                     {# Save data #}
                     <div class="panel--tr stripe-sepa-field">
                         <label>
                             <span class="outer-checkbox">
                                 <div class="checkbox">
-                                    <input class="stripe-save-bank-account" type="checkbox">
+                                    <input class="stripe-save-sepa-bank-account" type="checkbox">
                                     <span class="checkbox--state"></span>
                                 </div>
                             </span>
@@ -202,6 +203,17 @@
                     </div>
                     <div class="alert--content error-content"></div>
                 </div>
+
+                {# A box for displaying the SEPA mandate authorization text #}
+                <div class="alert is--info is--rounded">
+                    <div class="alert--icon">
+                        <i class="icon--element icon--info"></i>
+                    </div>
+                    <div class="alert--content">
+                        {{ "stripe_payment.form.sepa.mandate_info"|trans|replace({'[creditor]': 'company or shopname'}) }}
+                    </div>
+                </div>
+
                 <div class="panel--tr stripe-sepa-field">
                     {{ "stripe_payment.form.required"|trans }}
                 </div>

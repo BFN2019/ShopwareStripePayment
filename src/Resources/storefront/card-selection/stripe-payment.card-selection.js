@@ -200,6 +200,7 @@ export default class StripePaymentCardSelection extends Plugin {
      * @param message (optioanl) The fallback error message used in case no 'errorCode' is provided or no respective, localised description exists.
      */
     markFieldInvalid(fieldId, errorCode, message) {
+        // TODO: add localized error with snippets if avail
         this.invalidFields[fieldId] = message || 'Unknown error';
         this.updateValidationErrors();
     }
@@ -265,6 +266,7 @@ export default class StripePaymentCardSelection extends Plugin {
                 me.resetSubmitButtons();
 
                 // Display the error
+                // TODO: add localized error with snippets if avail
                 const message = result.error.message || 'Unknown error';
                 me.handleStripeError('Error: ' + message);
             } else {

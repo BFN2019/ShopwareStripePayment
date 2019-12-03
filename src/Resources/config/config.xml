@@ -58,11 +58,11 @@
             <helpText lang="de-DE">Aktivieren Sie diese Feld, um beim Bezahlvorgang das Speichern der Kreditkarte zu erlauben.</helpText>
         </input-field>
         <input-field type="bool">
-            <name>allowSavingBankAccounts</name>
-            <label>Display "Save bank account" option</label>
-            <label lang="de-DE">"Bankverbindung speichern" anzeigen</label>
-            <helpText>Enable this field to allow customers to save a bank account at checkout for future purchases.</helpText>
-            <helpText lang="de-DE">Aktivieren Sie diese Feld, um beim Bezahlvorgang das Speichern der Bankverbindung zu erlauben.</helpText>
+            <name>allowSavingSepaBankAccounts</name>
+            <label>Display "Save SEPA bank account" option</label>
+            <label lang="de-DE">"SEPA Bankverbindung speichern" anzeigen</label>
+            <helpText>Enable this field to allow customers to save a SEPA bank account at checkout for future purchases.</helpText>
+            <helpText lang="de-DE">Aktivieren Sie diese Feld, um beim Bezahlvorgang das Speichern der SEPA Bankverbindung zu erlauben.</helpText>
         </input-field>
         <input-field type="bool">
             <name>showPaymentProviderLogos</name>

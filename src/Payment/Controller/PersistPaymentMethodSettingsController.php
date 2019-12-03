@@ -38,11 +38,11 @@ class PersistPaymentMethodSettingsController extends StorefrontController
         if ($request->request->get('saveCard')) {
             $stripeSession->saveCardForFutureCheckouts = $request->request->get('saveCard');
         }
-        if ($request->request->get('selectedBankAccount')) {
-            $stripeSession->selectedBankAccount = $request->request->get('selectedBankAccount');
+        if ($request->request->get('selectedSepaBankAccount')) {
+            $stripeSession->selectedSepaBankAccount = $request->request->get('selectedSepaBankAccount');
         }
-        if ($request->request->get('saveBankAccount')) {
-            $stripeSession->saveBankAccountForFutureCheckouts = $request->request->get('saveBankAccount');
+        if ($request->request->get('saveSepaBankAccount')) {
+            $stripeSession->saveSepaBankAccountForFutureCheckouts = $request->request->get('saveSepaBankAccount');
         }
 
         return new JsonResponse([

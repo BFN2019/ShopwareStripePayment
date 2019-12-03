@@ -2,18 +2,18 @@
 
 {% block page_checkout_confirm_payment_current_text %}
     {{ parent() }}
-    {% if context.paymentMethod.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\CardPaymentHandler') %}
+    {% if context.paymentMethod.formattedHandlerIdentifier is same as('handler_stripe_cardpaymenthandler') %}
         {% set stripeData = page.extensions.stripeData.data %}
         {% if stripeData.selectedCard %}
             <br><br>
             <strong>{{ stripeData.selectedCard.name }} | {{ stripeData.selectedCard.brand }} | &bull;&bull;&bull;&bull;{{ stripeData.selectedCard.last4 }} | {{ "%02d"|format(stripeData.selectedCard.exp_month) }}/{{ stripeData.selectedCard.exp_year }}</strong>
         {% endif %}
     {% endif %}
-    {% if context.paymentMethod.handlerIdentifier is same as('Stripe\\ShopwarePlugin\\Payment\\Handler\\SepaPaymentHandler') %}
+    {% if context.paymentMethod.formattedHandlerIdentifier is same as('handler_stripe_sepapaymenthandler') %}
         {% set stripeData = page.extensions.stripeData.data %}
-        {% if stripeData.selectedBankAccount %}
+        {% if stripeData.selectedSepaBankAccount %}
             <br><br>
-            <strong>{{ stripeData.selectedBankAccount.name }} | {{ stripeData.selectedBankAccount.country }}&bull;&bull;&bull;&bull;{{ stripeData.selectedBankAccount.last4 }}</strong>
+            <strong>{{ stripeData.selectedSepaBankAccount.name }} | {{ stripeData.selectedSepaBankAccount.country }}&bull;&bull;&bull;&bull;{{ stripeData.selectedSepaBankAccount.last4 }}</strong>
         {% endif %}
     {% endif %}
 {% endblock %}

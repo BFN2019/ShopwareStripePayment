@@ -101,7 +101,7 @@ class SepaPaymentHandler implements AsynchronousPaymentHandlerInterface
             self::validateCustomer($customer);
 
             $stripeSession = $this->sessionService->getStripeSession();
-            if (!$stripeSession->selectedBankAccount || !isset($stripeSession->selectedBankAccount['id'])) {
+            if (!$stripeSession->selectedSepaBankAccount || !isset($stripeSession->selectedSepaBankAccount['id'])) {
                 throw new \Exception('no bank account selected');
             }
 
@@ -117,7 +117,7 @@ class SepaPaymentHandler implements AsynchronousPaymentHandlerInterface
             $paymentIntentConfig = [
                 'amount' => self::getPayableAmount($orderTransaction),
                 'currency' => mb_strtolower($this->getCurrency($order, $context)->getIsoCode()),
-                'payment_method' => $stripeSession->selectedBankAccount['id'],
+                'payment_method' => $stripeSession->selectedSepaBankAccount['id'],
                 'payment_method_types' => ['sepa_debit'],
                 'confirmation_method' => 'automatic',
                 'confirm' => true,
@@ -151,9 +151,9 @@ class SepaPaymentHandler implements AsynchronousPaymentHandlerInterface
                 $paymentIntentConfig['receipt_email'] = $customer->getEmail();
             }
 
-            if ($stripeSession->saveBankAccountForFutureCheckouts) {
+            if ($stripeSession->saveSepaBankAccountForFutureCheckouts) {
                 // Add the bank account to the Stripe customer
-                $paymentIntentConfig['save_payment_method'] = $stripeSession->saveBankAccountForFutureCheckouts;
+                $paymentIntentConfig['save_payment_method'] = $stripeSession->saveSepaBankAccountForFutureCheckouts;
             }
 
             $paymentIntent = $stripeApi->createPaymentIntent($paymentIntentConfig);

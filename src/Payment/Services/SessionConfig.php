@@ -8,7 +8,7 @@ class SessionConfig
 
     public $saveCardForFutureCheckouts = false;
 
-    public $saveBankAccountForFutureCheckouts = false;
+    public $saveSepaBankAccountForFutureCheckouts = false;
 
-    public $selectedBankAccount = null;
+    public $selectedSepaBankAccount = null;
 }

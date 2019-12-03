@@ -81,6 +81,7 @@ class WebhookController extends AbstractController
                 $this->webhookHandler->handleChargeSuccessful($charge, $context);
                 break;
             case 'charge.failed':
+            case 'charge.expired':
                 $charge = $event->data->object;
                 $this->webhookHandler->handleChargeUnsuccessful($charge, $context);
                 break;

@@ -72,10 +72,10 @@ class CheckoutSubscriber implements EventSubscriberInterface
         // $this->sessionService->resetStripeSession();
         $customer = $salesChannelContext->getCustomer();
         $savedCards = [];
-        $savedBankAccounts = [];
+        $savedSepaBankAccounts = [];
         if ($customer->getCustomFields() && isset($customer->getCustomFields()['stripeCustomerId'])) {
             $savedCards = $stripeApi->getSavedCardsForCustomer($customer->getCustomFields()['stripeCustomerId']);
-            $savedBankAccounts = $stripeApi->getSavedBankAccountsForCustomer($customer->getCustomFields()['stripeCustomerId']);
+            $savedSepaBankAccounts = $stripeApi->getSavedSepaBankAccountsForCustomer($customer->getCustomFields()['stripeCustomerId']);
         }
 
         $stripeSession = $this->sessionService->getStripeSession();
@@ -93,22 +93,22 @@ class CheckoutSubscriber implements EventSubscriberInterface
             }
         }
 
-        if ($stripeSession->selectedBankAccount) {
-            // Make sure the selected bank account is part of the list of available bank accounts
-            $bankAccountExists = false;
-            foreach ($savedBankAccounts as $bankAccount) {
-                if ($bankAccount['id'] === $stripeSession->selectedBankAccount['id']) {
-                    $bankAccountExists = true;
+        if ($stripeSession->selectedSepaBankAccount) {
+            // Make sure the selected sepa bank account is part of the list of available sepa bank accounts
+            $sepaBankAccountExists = false;
+            foreach ($savedSepaBankAccounts as $sepaBankAccount) {
+                if ($sepaBankAccount['id'] === $stripeSession->selectedSepaBankAccount['id']) {
+                    $sepaBankAccountExists = true;
                     break;
                 }
             }
-            if (!$bankAccountExists && $stripeSession->selectedBankAccount) {
-                $savedBankAccounts[] = $stripeSession->selectedBankAccount;
+            if (!$sepaBankAccountExists && $stripeSession->selectedSepaBankAccount) {
+                $savedSepaBankAccounts[] = $stripeSession->selectedSepaBankAccount;
             }
         }
 
         $allowSavingCreditCards = $this->settingsService->getConfigValue('allowSavingCreditCards', $salesChannelContext->getSalesChannel()->getId());
-        $allowSavingBankAccounts = $this->settingsService->getConfigValue('allowSavingBankAccounts', $salesChannelContext->getSalesChannel()->getId());
+        $allowSavingSepaBankAccounts = $this->settingsService->getConfigValue('allowSavingSepaBankAccounts', $salesChannelContext->getSalesChannel()->getId());
         $stripePublicKey = $this->settingsService->getConfigValue('stripePublicKey', $salesChannelContext->getSalesChannel()->getId());
 
         // TODO: filter sepa countries?
@@ -119,12 +119,12 @@ class CheckoutSubscriber implements EventSubscriberInterface
             'data' => [
                 'stripePublicKey' => $stripePublicKey,
                 'allowSavingCreditCards' => $allowSavingCreditCards,
-                'allowSavingBankAccounts' => $allowSavingBankAccounts,
+                'allowSavingSepaBankAccounts' => $allowSavingSepaBankAccounts,
                 'availableCards' => $savedCards,
                 'selectedCard' => $stripeSession->selectedCard,
                 'sepaCountryList' => $countries,
-                'selectedBankAccount' => $stripeSession->selectedBankAccount,
-                'availableSepaBankAccounts' => $savedBankAccounts,
+                'selectedSepaBankAccount' => $stripeSession->selectedSepaBankAccount,
+                'availableSepaBankAccounts' => $savedSepaBankAccounts,
             ],
         ]);
 

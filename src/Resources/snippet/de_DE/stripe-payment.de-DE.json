@@ -12,6 +12,42 @@
                     "new_card": "Neue Karte",
                     "saved_cards": "Gespeicherte Karten"
                 }
+            },
+            "sepa": {
+                "sepa_bank_account_selection": {
+                    "new_sepa_bank_account": "Neue SEPA Bankverbindung",
+                    "saved_sepa_bank_accounts": "Gespeicherte SEPA Bankverbindungen"
+                },
+                "iban": "IBAN",
+                "account_owner": "Kontoinhaber",
+                "email": "E-Mail",
+                "street": "Anschrift",
+                "zip_code": "Postleitzahl",
+                "city": "Stadt",
+                "country": "Land",
+                "mandate_info": "Ich ermächtige / Wir ermächtigen (A) [creditor] sowie Stripe, den durchführenden Zahlungsdienstleister, Zahlungen von meinem / unserem Konto mittels Lastschrift einzuziehen. Zugleich (B) weise ich mein / weisen wir unser Kreditinstitut an, die von [creditor] bzw. Stripe auf mein / unser Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann / Wir können innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem / unserem Kreditinstitut vereinbarten Bedingungen.",
+                "error": {
+                    "incomplete_iban": "Bitte geben Sie eine vollständige IBAN ein.",
+                    "invalid_account_owner": "Bitte geben Sie den Namen des Kontoinhabers ein.",
+                    "invalid_city": "Bitte geben Sie eine Stadt ein.",
+                    "invalid_country": "Bitte wählen Sie ein Land aus.",
+                    "invalid_iban": "Bitte geben Sie eine gültige IBAN ein.",
+                    "invalid_iban_country_code": "Der Ländercode der eingegebenen IBAN ist ungültig.",
+                    "invalid_street": "Bitte geben Sie eine Anschrift ein.",
+                    "invalid_zip_code": "Bitte geben Sie eine Postleitzahl ein.",
+                    "title": "Fehler"
+                },
+                "checkout": {
+                    "finish": {
+                        "mandate_info": {
+                            "title": "SEPA-Lastschriftmandat",
+                            "text": "Der fällige Betrag wird in den kommenden Tagen von dem angegebene Konto eingezogen. Das dazu von Ihnen erteilte SEPA-Lastschriftmandat kann über nachfolgenden Link eingesehen werden.",
+                            "open_mandate_button": {
+                                "title": "Lastschriftmandat öffnen"
+                            }
+                        }
+                    }
+                }
             }
         }
     }

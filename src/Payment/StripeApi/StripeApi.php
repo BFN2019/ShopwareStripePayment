@@ -109,7 +109,7 @@ class StripeApi
         return $cards;
     }
 
-    public function getSavedBankAccountsForCustomer(string $stripeCustomerId): array
+    public function getSavedSepaBankAccountsForCustomer(string $stripeCustomerId): array
     {
         $this->initializeStripeApi();
 

@@ -10,7 +10,7 @@ export default class StripePaymentSepaSelection extends Plugin {
          */
         stripePublicKey: '',
 
-        selectedBankAccount: null,
+        selectedSepaBankAccount: null,
 
         availableSepaBankAccounts: [],
 
@@ -27,7 +27,7 @@ export default class StripePaymentSepaSelection extends Plugin {
         /* eslint-disable no-undef */
         this.stripeClient = Stripe(this.options.stripePublicKey);
         // Save config
-        this.setSelectedBankAccount(this.options.selectedBankAccount);
+        this.setSelectedSepaBankAccount(this.options.selectedSepaBankAccount);
 
         // Setup form on payment method changes
         const paymentMethodElements = document.querySelectorAll('input.payment-method-input');
@@ -44,13 +44,13 @@ export default class StripePaymentSepaSelection extends Plugin {
      * Saves the given card and removes all hidden Stripe fields from the form. If the card exists, its ID as well as
      * its encoded data are added to the form as hidden fields.
      *
-     * @param bankAccount A Stripe card object.
+     * @param sepaBankAccount A Stripe card object.
      */
-    setSelectedBankAccount(bankAccount) {
-        this.selectedBankAccount = bankAccount;
-        if (this.selectedBankAccount) {
-            console.log(`set bankAccount ${JSON.stringify(bankAccount)}`);
-            this.selectedBankAccountChanged = true;
+    setSelectedSepaBankAccount(sepaBankAccount) {
+        this.selectedSepaBankAccount = sepaBankAccount;
+        if (this.selectedSepaBankAccount) {
+            console.log(`set sepaBankAccount ${JSON.stringify(sepaBankAccount)}`);
+            this.selectedSepaBankAccountChanged = true;
         }
     }
 
@@ -72,10 +72,10 @@ export default class StripePaymentSepaSelection extends Plugin {
             this.observeForm(); //TODO: remove listeners as well on change
 
             // Make sure the card selection matches the internal state
-            if (this.selectedBankAccount) {
-                this.formEl('.stripe-saved-bank-accounts').val(this.selectedBankAccount.id);
+            if (this.selectedSepaBankAccount) {
+                this.formEl('.stripe-saved-sepa-bank-accounts').val(this.selectedSepaBankAccount.id);
             }
-            this.formEl('.stripe-saved-bank-accounts').trigger('change');
+            this.formEl('.stripe-saved-sepa-bank-accounts').trigger('change');
         } else {
             this.getStripeSepaForm().hide();
         }
@@ -176,7 +176,7 @@ export default class StripePaymentSepaSelection extends Plugin {
     observeForm() {
         // Add listeners
         this.findForm().on('submit', { scope: this }, this.onFormSubmission);
-        this.formEl('.stripe-saved-bank-accounts').on('change', { scope: this }, this.onBankAccountSelectionChange);
+        this.formEl('.stripe-saved-sepa-bank-accounts').on('change', { scope: this }, this.onSepaBankAccountSelectionChange);
 
         const me = this;
         this.formEl('input[class^="stripe-sepa-"]').each(function () {
@@ -234,6 +234,7 @@ export default class StripePaymentSepaSelection extends Plugin {
      * @param message (optioanl) The fallback error message used in case no 'errorCode' is provided or no respective, localised description exists.
      */
     markFieldInvalid(fieldId, errorCode, message) {
+        // TODO: add localized error with snippets if avail
         this.invalidFields[fieldId] = message || 'Unknown error';
         this.updateValidationErrors();
     }
@@ -251,21 +252,21 @@ export default class StripePaymentSepaSelection extends Plugin {
         const form = $(this);
 
         // Check if a token/card was generated and hence the form can be submitted
-        if (me.selectedBankAccount) {
-            if (!me.selectedBankAccountChanged) {
+        if (me.selectedSepaBankAccount) {
+            if (!me.selectedSepaBankAccountChanged) {
                 return undefined;
             }
             me.unmountStripeElements();
 
             event.preventDefault();
             me._client.post(me.options.persistUrl, JSON.stringify({
-                selectedBankAccount: me.selectedBankAccount,
+                selectedSepaBankAccount: me.selectedSepaBankAccount,
             }), (res) => {
                 const result = JSON.parse(res);
                 if (!result.success) {
                     return;
                 }
-                me.selectedBankAccountChanged = null;
+                me.selectedSepaBankAccountChanged = null;
 
                 // Submit the form again to finish the payment process
                 form.submit();
@@ -289,8 +290,14 @@ export default class StripePaymentSepaSelection extends Plugin {
         me.setSubmitButtonsLoading();
         me.stripeClient.createPaymentMethod('sepa_debit', me.stripeElements[0], {
             billing_details: {
-                name: me.formEl('.stripe-sepa-account-owner').val(),
-                email: me.formEl('.stripe-sepa-email').val(),
+                name: me.formEl('input.stripe-sepa-account-owner').val(),
+                email: me.formEl('input.stripe-sepa-email').val(),
+                address: {
+                    line1: me.formEl('input.stripe-sepa-street').val(),
+                    city: me.formEl('input.stripe-sepa-zip-code').val(),
+                    postal_code: me.formEl('input.stripe-sepa-city').val(),
+                    country: me.formEl('select.stripe-sepa-country').val(),
+                },
             },
         }).then((result) => {
             if (result.error) {
@@ -299,20 +306,21 @@ export default class StripePaymentSepaSelection extends Plugin {
                 me.resetSubmitButtons();
 
                 // Display the error
+                // TODO: add localized error with snippets if avail
                 const message = result.error.message || 'Unknown error';
                 me.handleStripeError('Error: ' + message);
             } else {
                 // Save the card information
-                const bankAccount = result.paymentMethod.sepa_debit;
-                bankAccount.id = result.paymentMethod.id;
-                bankAccount.name = me.formEl('.stripe-sepa-account-owner').val();
-                me.setSelectedBankAccount(bankAccount);
+                const sepaBankAccount = result.paymentMethod.sepa_debit;
+                sepaBankAccount.id = result.paymentMethod.id;
+                sepaBankAccount.name = me.formEl('.stripe-sepa-account-owner').val();
+                me.setSelectedSepaBankAccount(sepaBankAccount);
 
-                const saveBankAccount = me.formEl('.stripe-save-bank-account').is(':checked');
+                const saveSepaBankAccount = me.formEl('.stripe-save-sepa-bank-account').is(':checked');
                 try {
                     me._client.post(me.options.persistUrl, JSON.stringify({
-                        selectedBankAccount: bankAccount,
-                        saveBankAccount,
+                        selectedSepaBankAccount: sepaBankAccount,
+                        saveSepaBankAccount,
                     }), (res) => {
                         const result = JSON.parse(res);
                         if (!result.success) {
@@ -362,33 +370,33 @@ export default class StripePaymentSepaSelection extends Plugin {
      *
      * @param Object event
      */
-    onBankAccountSelectionChange(event) {
+    onSepaBankAccountSelectionChange(event) {
         const me = event.data.scope;
         const elem = $(this);
 
         if (elem.val() === 'new') {
             // A new, empty card was selected
-            me.setSelectedBankAccount(null);
+            me.setSelectedSepaBankAccount(null);
 
             // Make validation errors visible
             me.updateValidationErrors();
 
             // Show the save check box
             me.formEl('.stripe-sepa-field').show();
-            me.formEl('.stripe-save-bank-account').show().prop('checked', true);
+            me.formEl('.stripe-save-sepa-bank-account').show().prop('checked', true);
 
             return;
         }
 
         // Find the selected card
         for (let i = 0; i < me.options.availableSepaBankAccounts.length; i++) {
-            const selectedBankAccount = me.options.availableSepaBankAccounts[i];
-            if (selectedBankAccount.id !== elem.val()) {
+            const selectedSepaBankAccount = me.options.availableSepaBankAccounts[i];
+            if (selectedSepaBankAccount.id !== elem.val()) {
                 continue;
             }
 
             // Save the card
-            me.setSelectedBankAccount(selectedBankAccount);
+            me.setSelectedSepaBankAccount(selectedSepaBankAccount);
 
             // Hide validation errors
             me.formEl('.stripe-payment-validation-error-box').hide();
