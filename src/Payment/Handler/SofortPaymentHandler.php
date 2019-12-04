@@ -22,9 +22,12 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Stripe\ShopwarePlugin\Payment\Services\SessionService;
+use Stripe\ShopwarePlugin\Payment\Settings\SettingsService;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApi;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory;
 use Stripe\ShopwarePlugin\Payment\Util\PaymentContext;
+use Stripe\ShopwarePlugin\Payment\Util\Util;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -53,19 +56,31 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
      * @var StripeApiFactory
      */
     private $stripeApiFactory;
+    /**
+     * @var SettingsService
+     */
+    private $settingsService;
+    /**
+     * @var SessionService
+     */
+    private $sessionService;
 
     public function __construct(
         StripeApiFactory $stripeApiFactory,
         PaymentContext $paymentContext,
         EntityRepositoryInterface $orderAddressRepository,
         EntityRepositoryInterface $currencyRepository,
-        OrderTransactionStateHandler $orderTransactionStateHandler
+        OrderTransactionStateHandler $orderTransactionStateHandler,
+        SettingsService $settingsService,
+        SessionService $sessionService
     ) {
         $this->stripeApiFactory = $stripeApiFactory;
         $this->paymentContext = $paymentContext;
         $this->orderAddressRepository = $orderAddressRepository;
         $this->currencyRepository = $currencyRepository;
         $this->orderTransactionStateHandler = $orderTransactionStateHandler;
+        $this->settingsService = $settingsService;
+        $this->sessionService = $sessionService;
     }
 
     public function pay(
@@ -84,26 +99,36 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
             $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
             $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
 
-            $source = $stripeApi->createSource(
-                [
-                    'type' => 'sofort',
-                    'amount' => self::getPayableAmount($orderTransaction),
-                    'currency' => $this->getCurrency($order, $context)->getIsoCode(),
-                    'owner' => [
-                        'name' => self::getCustomerName($salesChannelContext->getCustomer()),
-                    ],
-                    'sofort' => [
-                        'country' => $this->getBillingCountry($order, $context)->getIso(),
-                        // 'statement_descriptor' => 'TODO',
-                    ],
-                    'redirect' => [
-                        'return_url' => $transaction->getReturnUrl(),
-                    ],
-                    'metadata' => [
-                        'shopware_order_transaction_id' => $orderTransaction->getId(),
-                    ],
-                ]
+            $sourceConfig = [
+                'type' => 'sofort',
+                'amount' => self::getPayableAmount($orderTransaction),
+                'currency' => $this->getCurrency($order, $context)->getIsoCode(),
+                'owner' => [
+                    //'name' => self::getCustomerName($salesChannelContext->getCustomer()),
+                    'name' => 'succeeding_charge',
+                ],
+                'sofort' => [
+                    'country' => $this->getBillingCountry($order, $context)->getIso(),
+                ],
+                'redirect' => [
+                    'return_url' => $transaction->getReturnUrl(),
+                ],
+                'metadata' => [
+                    'shopware_order_transaction_id' => $orderTransaction->getId(),
+                ],
+            ];
+
+            $statementDescriptor = mb_substr(
+                $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
+                0,
+                22
             );
+            if ($statementDescriptor) {
+                $chargeParams['statement_descriptor'] = $statementDescriptor;
+            }
+
+            $source = $stripeApi->createSource($sourceConfig);
+
             if ($source->redirect->status !== 'pending') {
                 throw new InvalidSourceRedirectException($source, $orderTransaction);
             }
@@ -139,6 +164,13 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
                     'stripe_payment' => ['source_id' => $source->id],
                 ]);
             }
+            if ($source->status === 'pending') {
+                // Do not mark the payment as payed, but complete the checkout workflow.
+                // A webhook event will update the order payment status asynchronously and create the charge.
+                $this->sessionService->resetStripeSession();
+
+                return;
+            }
             if ($source->status !== 'chargeable') {
                 throw new SourceNotChargeableException($source, $orderTransaction);
             }
@@ -149,16 +181,11 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
                 'currency' => $source->currency,
                 'description' => self::createChargeDescription($order, $customer),
             ];
-            // if ($paymentMethod->includeStatmentDescriptorInCharge()) {
-            //     $chargeParams['statement_descriptor'] = mb_substr('TODO', 0, 22);
-            // }
-            // $stripeCustomer = Util::getStripeCustomer();
-            // if ($source->customer && $stripeCustomer) {
-            //     $chargeParams['customer'] = $stripeCustomer->id;
-            // }
-            // if ($sendReceiptEmails) {
-            //     $chargeParams['receipt_email'] = $customer->getEmail();
-            // }
+
+            $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
+            if ($this->settingsService->getConfigValue('sendStripeChargeEmails', $salesChannelId)) {
+                $chargeParams['receipt_email'] = $customer->getEmail();
+            }
 
             $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
             $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
@@ -167,7 +194,10 @@ class SofortPaymentHandler implements AsynchronousPaymentHandlerInterface
             $this->paymentContext->saveStripeCharge($orderTransaction, $context, $charge);
             switch ($charge->status) {
                 case 'succeeded':
-                    // TODO: check if already paid
+                    $this->sessionService->resetStripeSession();
+                    if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
+                        return;
+                    }
                     $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
                     break;
                 case 'failed':

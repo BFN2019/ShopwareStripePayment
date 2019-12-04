@@ -235,7 +235,9 @@ class CardPaymentHandler implements AsynchronousPaymentHandlerInterface
             $paymentIntent->save();
 
             // Mark the order as payed
-            // TODO: check if already paid
+            if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
+                return;
+            }
             $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
         } catch (Exception $exception) {
             throw new AsyncPaymentFinalizeException($orderTransaction->getId(), $exception->getMessage());

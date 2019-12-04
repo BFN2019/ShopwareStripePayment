@@ -151,6 +151,9 @@ class WebhookHandler
 
     public function handleSourceChargable(Source $source, Context $context): void
     {
+        // Wait a little so that the redirect may finish creating the charge
+        sleep(5);
+
         try {
             $orderTransaction = $this->getOrderTransactionForSource($source, $context);
         } catch (\Exception $e) {
@@ -158,11 +161,26 @@ class WebhookHandler
             return;
         }
 
-        $order = $orderTransaction->getOrder();
-        $customer = $order->getOrderCustomer()->getCustomer();
+        $orderTransactionPaymentContext = $orderTransaction->getCustomFields()['stripe_payment_context'];
+        if ($orderTransactionPaymentContext
+            && $orderTransactionPaymentContext['payment']
+            && $orderTransactionPaymentContext['payment']['charge_id']
+        ) {
+            // The charge was already created in the redirect, discard here
+            return;
+        }
 
         $salesChannelId = $context->getSource()->getSalesChannelId();
         $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
+
+        // Refresh the source and verify it is still chargeable
+        $source = $stripeApi->getSource($source->id);
+        if ($source->status !== 'chargeable') {
+            return;
+        }
+
+        $order = $orderTransaction->getOrder();
+        $customer = $order->getOrderCustomer()->getCustomer();
         $stripeCustomer = Util::getStripeCustomer(
             $this->customerRepository,
             $customer,

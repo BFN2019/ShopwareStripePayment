@@ -253,8 +253,10 @@ class SepaPaymentHandler implements AsynchronousPaymentHandlerInterface
             $paymentIntent->description .= ' / Order ' . $order->getOrderNumber();
             $paymentIntent->save();
 
+            if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
+                return;
+            }
             // Mark the order as payed
-            // TODO: check if already paid
             $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
         } catch (Exception $exception) {
             throw new AsyncPaymentFinalizeException($orderTransaction->getId(), $exception->getMessage());

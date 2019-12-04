@@ -10,6 +10,8 @@
             <argument type="service" id="order_address.repository"/>
             <argument type="service" id="currency.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler"/>
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\Settings\SettingsService"/>
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\Services\SessionService"/>
             <tag name="shopware.payment.method.async"/>
         </service>
         <service id="Stripe\ShopwarePlugin\Payment\Handler\CardPaymentHandler">

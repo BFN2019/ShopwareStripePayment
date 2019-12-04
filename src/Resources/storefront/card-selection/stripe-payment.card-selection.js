@@ -12,7 +12,7 @@ export default class StripePaymentCardSelection extends Plugin {
 
         selectedCard: null,
 
-        allCards: [],
+        availableCards: [],
 
         locale: 'en',
     };
@@ -23,7 +23,6 @@ export default class StripePaymentCardSelection extends Plugin {
         this.invalidFields = [];
 
         this.options = Object.assign(StripePaymentCardSelection.options, this.options || {});
-        this.allCards = this.options.availableCards;
 
         /* eslint-disable no-undef */
         this.stripeClient = Stripe(this.options.stripePublicKey);
@@ -78,6 +77,7 @@ export default class StripePaymentCardSelection extends Plugin {
             }
             this.formEl('.stripe-saved-cards').trigger('change');
         } else {
+            this.removeFormListeners();
             this.getStripeCardForm().hide();
         }
     }
@@ -180,6 +180,12 @@ export default class StripePaymentCardSelection extends Plugin {
         cardHolderElem.on('propertychange keyup input paste', { scope: this }, this.onCardHolderChange);
     }
 
+    removeFormListeners() {
+        this.findForm().off('submit', this.onFormSubmission);
+        this.formEl('.stripe-saved-cards').off('change', this.onCardSelectionChange);
+        this.formEl('.stripe-card-holder').off('propertychange keyup input paste', this.onCardHolderChange);
+    }
+
     /**
      * Removes all validation errors for the field with the given 'fieldId' and triggers an update of the displayed
      * validation errors.
@@ -217,6 +223,11 @@ export default class StripePaymentCardSelection extends Plugin {
         const me = event.data.scope;
         const form = $(this);
 
+        // Not the currently selected payment method
+        if (!me.getActiveStripeCardForm()) {
+            return undefined;
+        }
+
         // Check if a token/card was generated and hence the form can be submitted
         if (me.selectedCard) {
             if (!me.selectedCardChanged) {
@@ -238,11 +249,8 @@ export default class StripePaymentCardSelection extends Plugin {
                 // Submit the form again to finish the payment process
                 form.submit();
             });
-        }
 
-        // Not the currently selected payment method
-        if (!me.getActiveStripeCardForm()) {
-            return undefined;
+            return;
         }
 
         // Prevent the form from being submitted until a new Stripe token is generated and received
@@ -350,8 +358,8 @@ export default class StripePaymentCardSelection extends Plugin {
         }
 
         // Find the selected card
-        for (let i = 0; i < me.allCards.length; i++) {
-            const selectedCard = me.allCards[i];
+        for (let i = 0; i < me.options.availableCards.length; i++) {
+            const selectedCard = me.options.availableCards[i];
             if (selectedCard.id !== elem.val()) {
                 continue;
             }

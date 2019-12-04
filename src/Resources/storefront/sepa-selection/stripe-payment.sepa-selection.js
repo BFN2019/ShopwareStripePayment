@@ -77,6 +77,7 @@ export default class StripePaymentSepaSelection extends Plugin {
             }
             this.formEl('.stripe-saved-sepa-bank-accounts').trigger('change');
         } else {
+            this.removeFormListeners();
             this.getStripeSepaForm().hide();
         }
     }
@@ -187,6 +188,17 @@ export default class StripePaymentSepaSelection extends Plugin {
         });
     }
 
+    removeFormListeners() {
+        this.findForm().off('submit', this.onFormSubmission);
+        this.formEl('.stripe-saved-sepa-bank-accounts').off('change', this.onSepaBankAccountSelectionChange);
+        const me = this;
+        this.formEl('input[class^="stripe-sepa-"]').each(function () {
+            // Save the current value and add listener
+            const elem = $(this);
+            elem.off('propertychange keyup input paste', me.onFieldChange);
+        });
+    }
+
     /**
      * Validates the field value to not be empty. If the validation failes, the field is marked invalid.
      *
@@ -251,11 +263,17 @@ export default class StripePaymentSepaSelection extends Plugin {
         const me = event.data.scope;
         const form = $(this);
 
+        // Not the currently selected payment method
+        if (!me.getActiveStripeSepaForm()) {
+            return undefined;
+        }
+
         // Check if a token/card was generated and hence the form can be submitted
         if (me.selectedSepaBankAccount) {
             if (!me.selectedSepaBankAccountChanged) {
                 return undefined;
             }
+
             me.unmountStripeElements();
 
             event.preventDefault();
@@ -271,11 +289,8 @@ export default class StripePaymentSepaSelection extends Plugin {
                 // Submit the form again to finish the payment process
                 form.submit();
             });
-        }
 
-        // Not the currently selected payment method
-        if (!me.getActiveStripeSepaForm()) {
-            return undefined;
+            return;
         }
 
         // Prevent the form from being submitted until a new Stripe token is generated and received
@@ -339,31 +354,6 @@ export default class StripePaymentSepaSelection extends Plugin {
     }
 
     /**
-     * Adds a subscriber to the card holder form field that is fired when its value is changed to validate the
-     * entered value.
-     *
-     * @param Object event
-     */
-    onCardHolderChange(event) {
-        const me = event.data.scope;
-        const elem = $(this);
-        // Check if value has changed
-        if (elem.data('oldVal') === elem.val()) {
-            return;
-        }
-        elem.data('oldVal', elem.val());
-
-        // Validate the field
-        if (elem.val().trim().length === 0) {
-            elem.addClass('instyle_error has--error');
-            me.markFieldInvalid('cardHolder', 'invalid_card_holder');
-        } else {
-            elem.removeClass('instyle_error has--error');
-            me.markFieldValid('cardHolder');
-        }
-    }
-
-    /**
      * Adds a change observer to the card selection field. If an existing card is selected, all form fields are hidden
      * and the card's Stripe information is added to the form. If the 'new' option is selected, all fields made visible
      * and the Stripe card info is removed from the form.
@@ -396,12 +386,14 @@ export default class StripePaymentSepaSelection extends Plugin {
             }
 
             // Save the card
-            me.setSelectedSepaBankAccount(selectedSepaBankAccount);
+            if (!me.selectedSepaBankAccount || me.selectedSepaBankAccount.id !== selectedSepaBankAccount.id) {
+                me.setSelectedSepaBankAccount(selectedSepaBankAccount);
+            }
 
             // Hide validation errors
             me.formEl('.stripe-payment-validation-error-box').hide();
 
-            // Hide all card fields
+            // Hide all sepa fields
             me.formEl('.stripe-sepa-field').hide();
             me.formEl('.stripe-save-bank-account').hide();
 
