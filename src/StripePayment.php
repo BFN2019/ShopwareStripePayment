@@ -8,7 +8,11 @@ use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
+use Stripe\ShopwarePlugin\Payment\Handler\BancontactPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\CardPaymentHandler;
+use Stripe\ShopwarePlugin\Payment\Handler\GiropayPaymentHandler;
+use Stripe\ShopwarePlugin\Payment\Handler\IdealPaymentHandler;
+use Stripe\ShopwarePlugin\Payment\Handler\KlarnaPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\SepaPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\SofortPaymentHandler;
 use Symfony\Component\Config\FileLocator;
@@ -40,16 +44,6 @@ class StripePayment extends Plugin
         return $viewPaths;
     }
 
-    public function getStorefrontScriptPath(): string
-    {
-        return 'Resources/dist/storefront/js';
-    }
-
-    public function getAdministrationEntryPath(): string
-    {
-        return 'Resources/administration';
-    }
-
     public function install(InstallContext $installContext): void
     {
         $context = $installContext->getContext();
@@ -70,7 +64,6 @@ class StripePayment extends Plugin
             'handlerIdentifier' => SofortPaymentHandler::class,
             'pluginId' => $pluginId,
         ];
-        $paymentMethodRepository->upsert([$sofortPaymentMethod], $context);
 
         // Check for existing 'Card' payment method
         $criteria = new Criteria();
@@ -83,7 +76,6 @@ class StripePayment extends Plugin
             'handlerIdentifier' => CardPaymentHandler::class,
             'pluginId' => $pluginId,
         ];
-        $paymentMethodRepository->upsert([$cardPaymentMethod], $context);
 
         // Check for existing 'Sepa' payment method
         $criteria = new Criteria();
@@ -96,7 +88,64 @@ class StripePayment extends Plugin
             'handlerIdentifier' => SepaPaymentHandler::class,
             'pluginId' => $pluginId,
         ];
-        $paymentMethodRepository->upsert([$sepaPaymentMethod], $context);
+
+        // Check for existing 'Bancontact' payment method
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', BancontactPaymentHandler::class));
+        $bancontactPaymentMethodId = $paymentMethodRepository->searchIds($criteria, $context)->firstId();
+
+        $bancontactPaymentMethod = [
+            'id' => $bancontactPaymentMethodId,
+            'name' => 'Bancontact (via Stripe)',
+            'handlerIdentifier' => BancontactPaymentHandler::class,
+            'pluginId' => $pluginId,
+        ];
+
+        // Check for existing 'Giropay' payment method
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', GiropayPaymentHandler::class));
+        $giropayPaymentMethodId = $paymentMethodRepository->searchIds($criteria, $context)->firstId();
+
+        $giropayPaymentMethod = [
+            'id' => $giropayPaymentMethodId,
+            'name' => 'Giropay (via Stripe)',
+            'handlerIdentifier' => GiropayPaymentHandler::class,
+            'pluginId' => $pluginId,
+        ];
+
+        // Check for existing 'Ideal' payment method
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', IdealPaymentHandler::class));
+        $idealPaymentMethodId = $paymentMethodRepository->searchIds($criteria, $context)->firstId();
+
+        $idealPaymentMethod = [
+            'id' => $idealPaymentMethodId,
+            'name' => 'iDEAL (via Stripe)',
+            'handlerIdentifier' => IdealPaymentHandler::class,
+            'pluginId' => $pluginId,
+        ];
+
+        // Check for existing 'Klarna' payment method
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', KlarnaPaymentHandler::class));
+        $klarnaPaymentMethodId = $paymentMethodRepository->searchIds($criteria, $context)->firstId();
+
+        $klarnaPaymentMethod = [
+            'id' => $klarnaPaymentMethodId,
+            'name' => 'Klarna (via Stripe)',
+            'handlerIdentifier' => KlarnaPaymentHandler::class,
+            'pluginId' => $pluginId,
+        ];
+
+        $paymentMethodRepository->upsert([
+            $sofortPaymentMethod,
+            $cardPaymentMethod,
+            $sepaPaymentMethod,
+            $bancontactPaymentMethod,
+            $giropayPaymentMethod,
+            $idealPaymentMethod,
+            $klarnaPaymentMethod,
+        ], $context);
 
         // TODO: Activate/deactivate payment methods upon plugin activation/deactivation and uninstall
 

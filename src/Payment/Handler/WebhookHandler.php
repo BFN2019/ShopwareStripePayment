@@ -229,6 +229,8 @@ class WebhookHandler
             return;
         }
 
+        $this->paymentContext->saveStripeCharge($orderTransaction, $context, $charge);
+
         // Already paid, nothing to do
         if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
             return;

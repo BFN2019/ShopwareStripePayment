@@ -110,6 +110,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
         $allowSavingCreditCards = $this->settingsService->getConfigValue('allowSavingCreditCards', $salesChannelContext->getSalesChannel()->getId());
         $allowSavingSepaBankAccounts = $this->settingsService->getConfigValue('allowSavingSepaBankAccounts', $salesChannelContext->getSalesChannel()->getId());
         $stripePublicKey = $this->settingsService->getConfigValue('stripePublicKey', $salesChannelContext->getSalesChannel()->getId());
+        $showPaymentProviderLogos = $this->settingsService->getConfigValue('showPaymentProviderLogos', $salesChannelContext->getSalesChannel()->getId());
 
         // TODO: filter sepa countries?
         $countries = $this->countryRepository->search(new Criteria(), Context::createDefaultContext())->getElements();
@@ -125,6 +126,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
                 'sepaCountryList' => $countries,
                 'selectedSepaBankAccount' => $stripeSession->selectedSepaBankAccount,
                 'availableSepaBankAccounts' => $savedSepaBankAccounts,
+                'showPaymentProviderLogos' => $showPaymentProviderLogos,
             ],
         ]);
 

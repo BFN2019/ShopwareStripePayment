@@ -5,7 +5,7 @@ namespace Stripe\ShopwarePlugin\Payment\Handler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
-class SofortPaymentHandler extends AbstractSourcePaymentHandler
+class IdealPaymentHandler extends AbstractSourcePaymentHandler
 {
     protected function createSourceConfig(
         AsyncPaymentTransactionStruct $transaction,
@@ -16,14 +16,11 @@ class SofortPaymentHandler extends AbstractSourcePaymentHandler
         $context = $salesChannelContext->getContext();
 
         $sourceConfig = [
-            'type' => 'sofort',
+            'type' => 'ideal',
             'amount' => self::getPayableAmount($orderTransaction),
             'currency' => $this->getCurrency($order, $context)->getIsoCode(),
             'owner' => [
                 'name' => self::getCustomerName($salesChannelContext->getCustomer()),
-            ],
-            'sofort' => [
-                'country' => $this->getBillingAddress($order, $context)->getCountry()->getIso(),
             ],
             'redirect' => [
                 'return_url' => $transaction->getReturnUrl(),
