@@ -25,6 +25,7 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\Locale\LocaleEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Stripe\ShopwarePlugin\Payment\Services\SessionConfig;
 use Stripe\ShopwarePlugin\Payment\Services\SessionService;
 use Stripe\ShopwarePlugin\Payment\Settings\SettingsService;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory;
@@ -33,7 +34,7 @@ use Stripe\ShopwarePlugin\Payment\Util\Util;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
-abstract class AbstractSourcePaymentHandler implements AsynchronousPaymentHandlerInterface
+abstract class AbstractPaymentIntentPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
     /**
      * @var SettingsService
@@ -70,9 +71,11 @@ abstract class AbstractSourcePaymentHandler implements AsynchronousPaymentHandle
     /**
      * @var EntityRepositoryInterface
      */
-    private $customerRepository;
+    protected $customerRepository;
 
-    abstract protected function createSourceConfig(
+    private const STRIPE_REQUEST_PARAMETER_PAYMENT_INTENT_CLIENT_SECRET = 'payment_intent_client_secret';
+
+    abstract protected function createPaymentIntentConfig(
         AsyncPaymentTransactionStruct $transaction,
         SalesChannelContext $salesChannelContext
     ): array;
@@ -110,20 +113,68 @@ abstract class AbstractSourcePaymentHandler implements AsynchronousPaymentHandle
             $customer = $salesChannelContext->getCustomer();
             self::validateCustomer($customer);
 
-            $sourceConfig = $this->createSourceConfig($transaction, $salesChannelContext);
+            $stripeSessionConfig = $this->sessionService->getStripeSession();
+            $this->validateSessionConfig($stripeSessionConfig);
+
+            $paymentIntentConfig = $this->createPaymentIntentConfig($transaction, $salesChannelContext);
 
             $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
             $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
-            $source = $stripeApi->createSource($sourceConfig);
-
-            if ($source->redirect->status !== 'pending') {
-                throw new InvalidSourceRedirectException($source, $orderTransaction);
-            }
+            $paymentIntent = $stripeApi->createPaymentIntent($paymentIntentConfig);
 
             $context = $salesChannelContext->getContext();
-            $this->paymentContext->saveStripeSource($orderTransaction, $context, $source);
+            if ($paymentIntent->status === 'succeeded') {
+                // No special flow required, save the payment intent and charge id in the order transaction
+                try {
+                    $this->paymentContext->saveStripePaymentIntent($orderTransaction, $context, $paymentIntent);
+                    $this->paymentContext->saveStripeCharge($orderTransaction, $context, $paymentIntent->charges->data[0]);
+                    $this->sessionService->resetStripeSession();
+                } catch (\Exception $e) {
+                    // TODO
+                    $message = $e->getMessage();
 
-            return new RedirectResponse($source->redirect->url);
+                    throw new \Exception($message);
+                }
+
+                // Redirect directly to the finalize step
+                $parameters = http_build_query([
+                    self::STRIPE_REQUEST_PARAMETER_PAYMENT_INTENT_CLIENT_SECRET => $paymentIntent->client_secret,
+                ]);
+
+                return new RedirectResponse(sprintf('%s&%s', $transaction->getReturnUrl(), $parameters));
+            }
+
+            if ($paymentIntent->status === 'requires_action') {
+                // We need to redirect to handle the required action
+                if (!$paymentIntent->next_action || $paymentIntent->next_action->type !== 'redirect_to_url') {
+                    // TODO
+                    $message = 'no redirect url';
+
+                    throw new \Exception($message);
+                }
+
+                $this->paymentContext->saveStripePaymentIntent($orderTransaction, $context, $paymentIntent);
+
+                return new RedirectResponse($paymentIntent->next_action->redirect_to_url->url);
+            }
+
+            if ($paymentIntent->status === 'processing') {
+                // Redirect directly to the finalize step, we need to update the order status via a Webhook
+                $this->paymentContext->saveStripePaymentIntent($orderTransaction, $context, $paymentIntent);
+                if (count($paymentIntent->charges->data) > 0) {
+                    $this->paymentContext->saveStripeCharge($orderTransaction, $context, $paymentIntent->charges->data[0]);
+                }
+
+                $parameters = http_build_query([
+                    self::STRIPE_REQUEST_PARAMETER_PAYMENT_INTENT_CLIENT_SECRET => $paymentIntent->client_secret,
+                ]);
+
+                return new RedirectResponse(sprintf('%s&%s', $transaction->getReturnUrl(), $parameters));
+            }
+
+            // Unable to process payment
+            // TODO: use custom exception and correct snippet
+            throw new PaymentIntentNotChargeableException($paymentIntent, $orderTransaction);
         } catch (\Exception $exception) {
             throw new AsyncPaymentProcessException($orderTransaction->getId(), $exception->getMessage());
         }
@@ -140,80 +191,45 @@ abstract class AbstractSourcePaymentHandler implements AsynchronousPaymentHandle
         $customer = $salesChannelContext->getCustomer();
 
         try {
-            static::validateCustomer($customer);
+            self::validateCustomer($customer);
 
-            // Validate the Stripe source
-            $source = $this->paymentContext->getStripeSource($orderTransaction, $salesChannelContext);
-            if (!$source || $source->client_secret !== $request->get('client_secret')) {
+            // Validate the Stripe payment intent
+            $paymentIntent = $this->paymentContext->getStripePaymentIntent($orderTransaction, $salesChannelContext);
+            if (!$paymentIntent || $paymentIntent->client_secret !== $request->get(self::STRIPE_REQUEST_PARAMETER_PAYMENT_INTENT_CLIENT_SECRET)) {
                 throw new InvalidTransactionException($orderTransaction->getId());
             }
-            if (($source->redirect->status === 'failed' && $source->redirect->failure_reason === 'user_abort')
-                || $request->get('redirect_status') === 'canceled'
-            ) {
-                throw new CustomerCanceledAsyncPaymentException($orderTransaction->getId(), [
-                    'stripe_payment' => ['source_id' => $source->id],
-                ]);
-            }
-            if ($source->status === 'pending') {
+            if ($paymentIntent->status === 'processing') {
                 // Do not mark the payment as payed, but complete the checkout workflow.
-                // A webhook event will update the order payment status asynchronously and create the charge.
+                // A Webhook event will update the order payment status asynchronously.
                 $this->sessionService->resetStripeSession();
 
                 return;
             }
-            if ($source->status !== 'chargeable') {
-                throw new SourceNotChargeableException($source, $orderTransaction);
+            if ($paymentIntent->status !== 'succeeded') {
+                // TODO
+                throw new PaymentIntentNotChargeableException($paymentIntent, $orderTransaction);
             }
 
-            $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
-            $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
-            $stripeCustomer = Util::getOrCreateStripeCustomer(
-                $this->customerRepository,
-                $customer,
-                $stripeApi,
-                $context
-            );
-            $chargeParams = [
-                'source' => $source->id,
-                'amount' => $source->amount,
-                'currency' => $source->currency,
-                'description' => self::createChargeDescription($order, $customer),
-                'metadata' => [
-                    'shopware_order_transaction_id' => $orderTransaction->getId(),
-                ],
-                'customer' => $stripeCustomer->id,
-            ];
+            // Attach the created charge id to the order transaction
+            $this->paymentContext->saveStripeCharge($orderTransaction, $context, $paymentIntent->charges->data[0]);
+            $this->sessionService->resetStripeSession();
 
-            $statementDescriptor = mb_substr(
-                $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
-                0,
-                22
-            );
-            if ($statementDescriptor) {
-                $chargeConfig['statement_descriptor'] = $statementDescriptor;
-            }
-            if ($this->settingsService->getConfigValue('sendStripeChargeEmails', $salesChannelId)) {
-                $chargeParams['receipt_email'] = $customer->getEmail();
-            }
+            // Update the payment intent with the order number
+            $paymentIntent->description .= ' / Order ' . $order->getOrderNumber();
+            $paymentIntent->save();
 
-            $charge = $stripeApi->createCharge($chargeParams);
-            $this->paymentContext->saveStripeCharge($orderTransaction, $context, $charge);
-            switch ($charge->status) {
-                case 'succeeded':
-                    $this->sessionService->resetStripeSession();
-                    if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
-                        return;
-                    }
-                    $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
-                    break;
-                case 'failed':
-                    throw new ChargeFailedException($charge, $orderTransaction);
-                default:
-                    break;
+            // Mark the order as payed if it isn't yet
+            if ($orderTransaction->getStateMachineState()->getTechnicalName() === 'paid') {
+                return;
             }
+            $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
         } catch (\Exception $exception) {
             throw new AsyncPaymentFinalizeException($orderTransaction->getId(), $exception->getMessage());
         }
+    }
+
+    protected function validateSessionConfig(SessionConfig $sessionConfig): void
+    {
     }
 
     /**
@@ -257,21 +273,6 @@ abstract class AbstractSourcePaymentHandler implements AsynchronousPaymentHandle
         }
 
         return $currency;
-    }
-
-    /**
-     * @param OrderEntity $order
-     * @param CustomerEntity $customer
-     * @return string
-     */
-    private static function createChargeDescription(OrderEntity $order, CustomerEntity $customer): string
-    {
-        return sprintf(
-            '%s / Customer %s / Order %s',
-            $customer->getEmail(),
-            $customer->getCustomerNumber(),
-            $order->getOrderNumber()
-        );
     }
 
     /**

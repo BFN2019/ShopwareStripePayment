@@ -181,7 +181,7 @@ class WebhookHandler
 
         $order = $orderTransaction->getOrder();
         $customer = $order->getOrderCustomer()->getCustomer();
-        $stripeCustomer = Util::getStripeCustomer(
+        $stripeCustomer = Util::getOrCreateStripeCustomer(
             $this->customerRepository,
             $customer,
             $stripeApi,
@@ -201,11 +201,9 @@ class WebhookHandler
                 $customer->getCustomerNumber(),
                 $order->getOrderNumber()
             ),
+            'customer' => $stripeCustomer->id,
         ];
 
-        if ($stripeCustomer) {
-            $chargeConfig['customer'] = $stripeCustomer->id;
-        }
         $statementDescriptor = mb_substr(
             $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
             0,
