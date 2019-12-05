@@ -25,6 +25,7 @@ use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\Locale\LocaleEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Stripe\ShopwarePlugin\Payment\Services\SessionService;
 use Stripe\ShopwarePlugin\Payment\Settings\SettingsService;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory;
@@ -88,13 +89,13 @@ abstract class AbstractSourcePaymentHandler implements AsynchronousPaymentHandle
         EntityRepositoryInterface $languageRepository,
         EntityRepositoryInterface $customerRepository
     ) {
-        $this->stripeApiFactory = $stripeApiFactory;
-        $this->paymentContext = $paymentContext;
-        $this->orderAddressRepository = $orderAddressRepository;
-        $this->currencyRepository = $currencyRepository;
-        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->settingsService = $settingsService;
         $this->sessionService = $sessionService;
+        $this->stripeApiFactory = $stripeApiFactory;
+        $this->paymentContext = $paymentContext;
+        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
+        $this->orderAddressRepository = $orderAddressRepository;
+        $this->currencyRepository = $currencyRepository;
         $this->languageRepository = $languageRepository;
         $this->customerRepository = $customerRepository;
     }
@@ -185,7 +186,7 @@ abstract class AbstractSourcePaymentHandler implements AsynchronousPaymentHandle
             ];
 
             $statementDescriptor = mb_substr(
-                $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
+                $this->paymentContext->getStatementDescriptor($salesChannelContext->getSalesChannel(), $order),
                 0,
                 22
             );

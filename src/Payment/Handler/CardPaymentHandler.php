@@ -41,24 +41,12 @@ class CardPaymentHandler extends AbstractPaymentIntentPaymentHandler
         ];
 
         $statementDescriptor = mb_substr(
-            $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
+            $this->paymentContext->getStatementDescriptor($salesChannelContext->getSalesChannel(), $order),
             0,
             22
         );
         if ($statementDescriptor) {
             $paymentIntentConfig['statement_descriptor'] = $statementDescriptor;
-        }
-
-        // TODO: not supported in sw6?
-        // Enable MOTO transaction, if configured and order is placed by shop admin (aka user has logged in via backend)
-        //$isAdminRequest = isset($this->get('session')->Admin) && $this->get('session')->Admin === true;
-        $isAdminRequest = false;
-        if ($isAdminRequest && $this->settingsService->getConfigValue('allowMotoTransactions', $salesChannelId)) {
-            $paymentIntentConfig['payment_method_options'] = [
-                'card' => [
-                    'moto' => true,
-                ],
-            ];
         }
 
         if ($this->settingsService->getConfigValue('sendStripeChargeEmails', $salesChannelId)) {

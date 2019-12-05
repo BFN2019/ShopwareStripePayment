@@ -91,13 +91,13 @@ abstract class AbstractPaymentIntentPaymentHandler implements AsynchronousPaymen
         EntityRepositoryInterface $languageRepository,
         EntityRepositoryInterface $customerRepository
     ) {
-        $this->stripeApiFactory = $stripeApiFactory;
-        $this->paymentContext = $paymentContext;
-        $this->orderAddressRepository = $orderAddressRepository;
-        $this->currencyRepository = $currencyRepository;
-        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
         $this->settingsService = $settingsService;
         $this->sessionService = $sessionService;
+        $this->stripeApiFactory = $stripeApiFactory;
+        $this->paymentContext = $paymentContext;
+        $this->orderTransactionStateHandler = $orderTransactionStateHandler;
+        $this->orderAddressRepository = $orderAddressRepository;
+        $this->currencyRepository = $currencyRepository;
         $this->languageRepository = $languageRepository;
         $this->customerRepository = $customerRepository;
     }
@@ -247,11 +247,6 @@ abstract class AbstractPaymentIntentPaymentHandler implements AsynchronousPaymen
         return intval(round(100 * $orderTransaction->getAmount()->getTotalPrice()));
     }
 
-    protected static function getCustomerName(CustomerEntity $customer): string
-    {
-        return trim($customer->getCompany() ?? sprintf('%s %s', $customer->getFirstName(), $customer->getLastName()));
-    }
-
     /**
      * @param OrderEntity $order
      * @param Context $context
@@ -273,63 +268,6 @@ abstract class AbstractPaymentIntentPaymentHandler implements AsynchronousPaymen
         }
 
         return $currency;
-    }
-
-    /**
-     * @param OrderEntity $order
-     * @param Context $context
-     * @return OrderAddressEntity
-     * @throws InvalidOrderException
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
-     */
-    protected function getBillingAddress(OrderEntity $order, Context $context): OrderAddressEntity
-    {
-        $billingAddressId = $order->getBillingAddressId();
-        $criteria = new Criteria([$billingAddressId]);
-        $criteria->addAssociation('country');
-        $billingAddress = $this->orderAddressRepository->search($criteria, $context)->get($billingAddressId);
-        if (!$billingAddress) {
-            throw new InvalidOrderException($order->getId());
-        }
-
-        return $billingAddress;
-    }
-
-    /**
-     * @param OrderEntity $order
-     * @param Context $context
-     * @return OrderAddressEntity
-     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
-     */
-    protected function getShippingAddress(OrderEntity $order, Context $context): OrderAddressEntity
-    {
-        $criteria = new Criteria();
-        $criteria->addAssociations(
-            [
-                'country',
-                'countryState',
-            ]
-        );
-        $criteria->addFilter(
-            new EqualsFilter(
-                'orderId',
-                $order->getId()
-            )
-        );
-        $criteria->addFilter(
-            new NotFilter(NotFilter::CONNECTION_AND, [new EqualsFilter('id', $order->getBillingAddressId())])
-        );
-
-        $result = $this->orderAddressRepository->search($criteria, $context);
-        if ($result->getTotal() === 0) {
-            // TODO
-            throw new \Exception('no shipping address');
-        }
-
-        /** @var OrderAddressEntity $shippingAddress */
-        $shippingAddress = $result->getEntities()->first();
-
-        return $shippingAddress;
     }
 
     /**

@@ -30,9 +30,8 @@ class BancontactPaymentHandler extends AbstractSourcePaymentHandler
             ],
         ];
 
-        $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
         $statementDescriptor = mb_substr(
-            $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
+            $this->paymentContext->getStatementDescriptor($salesChannelContext->getSalesChannel(), $order),
             0,
             22
         );

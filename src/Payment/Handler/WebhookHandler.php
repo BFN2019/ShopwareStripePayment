@@ -205,7 +205,7 @@ class WebhookHandler
         ];
 
         $statementDescriptor = mb_substr(
-            $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
+            $this->paymentContext->getStatementDescriptor($order->getSalesChannel(), $order),
             0,
             22
         );
@@ -236,6 +236,15 @@ class WebhookHandler
         $this->orderTransactionStateHandler->pay($orderTransaction->getId(), $context);
     }
 
+    /**
+     * @param Source $source
+     * @param Context $context
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws \Shopware\Core\System\StateMachine\Exception\IllegalTransitionException
+     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineInvalidEntityIdException
+     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineInvalidStateFieldException
+     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException
+     */
     public function handleSourceUnsuccessful(Source $source, Context $context): void
     {
         try {
@@ -253,7 +262,11 @@ class WebhookHandler
     }
 
     /**
+     * @param OrderEntity $order
+     * @param Context $context
+     * @return CurrencyEntity
      * @throws InvalidOrderException
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
      */
     private function getCurrency(OrderEntity $order, Context $context): CurrencyEntity
     {
@@ -271,11 +284,18 @@ class WebhookHandler
         return $currency;
     }
 
+    /**
+     * @param Source $source
+     * @param Context $context
+     * @return OrderTransactionEntity
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     */
     private function getOrderTransactionForSource(Source $source, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria();
         $criteria->addAssociations([
             'order',
+            'order.salesChannel',
             'order.orderCustomer.customer',
         ]);
         $criteria->addFilter(
@@ -293,6 +313,12 @@ class WebhookHandler
         return $result->getEntities()->first();
     }
 
+    /**
+     * @param Charge $charge
+     * @param Context $context
+     * @return OrderTransactionEntity
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     */
     private function getOrderTransactionForCharge(Charge $charge, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria();
@@ -312,6 +338,12 @@ class WebhookHandler
         return $result->getEntities()->first();
     }
 
+    /**
+     * @param PaymentIntent $paymentIntent
+     * @param Context $context
+     * @return OrderTransactionEntity
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     */
     private function getOrderTransactionForPaymentIntent(PaymentIntent $paymentIntent, Context $context): OrderTransactionEntity
     {
         $criteria = new Criteria();

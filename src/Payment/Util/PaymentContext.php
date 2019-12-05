@@ -3,18 +3,25 @@
 namespace Stripe\ShopwarePlugin\Payment\Util;
 
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Stripe\Charge;
 use Stripe\PaymentIntent;
-use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApi;
+use Stripe\ShopwarePlugin\Payment\Settings\SettingsService;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory;
 use Stripe\Source;
 
 class PaymentContext
 {
     private const PAYMENT_CONTEXT_KEY = 'stripe_payment_context';
+
+    /**
+     * @var SettingsService
+     */
+    private $settingsService;
 
     /**
      * @var StripeApiFactory
@@ -26,8 +33,13 @@ class PaymentContext
      */
     private $orderTransactionRepository;
 
-    public function __construct(StripeApiFactory $stripeApiFactory, EntityRepositoryInterface $orderTransactionRepository)
-    {
+
+    public function __construct(
+        SettingsService $settingsService,
+        StripeApiFactory $stripeApiFactory,
+        EntityRepositoryInterface $orderTransactionRepository
+    ) {
+        $this->settingsService = $settingsService;
         $this->stripeApiFactory = $stripeApiFactory;
         $this->orderTransactionRepository = $orderTransactionRepository;
     }
@@ -113,5 +125,33 @@ class PaymentContext
         $customFields = $orderTransaction->getCustomFields() ?? [];
         $customFields[self::PAYMENT_CONTEXT_KEY] = $stripePaymentContext;
         $orderTransaction->setCustomFields($customFields);
+    }
+
+    /**
+     * @param SalesChannelEntity $salesChannel
+     * @param OrderEntity $order
+     * @return string|null
+     */
+    public function getStatementDescriptor(SalesChannelEntity $salesChannel, OrderEntity $order): ?string
+    {
+        // Determine the prefix of the long descriptor
+        $statementDescriptorPrefix = $this->settingsService->getConfigValue('statementDescriptorPrefix', $salesChannel->getId()) ?: '';
+        if (!$statementDescriptorPrefix) {
+            // Construct the prefix using the shop name
+            $statementDescriptorPrefix = $salesChannel->getName();
+        }
+        // TODO: use url as fallback as well?
+
+        if (!$statementDescriptorPrefix) {
+            $statementDescriptor = 'Ref. ' . $order->getOrderNumber();
+        } else {
+            $statementDescriptor = $statementDescriptorPrefix . ' Ref. ' . $order->getOrderNumber();
+        }
+
+        // Strip all characters that are not allowed in statement descriptors
+        $statementDescriptor = preg_replace('/[\\<\\>\\/\\(\\)\\{\\}\'"]/', '', $statementDescriptor);
+
+        // Keep at most 35 characters
+        return mb_substr($statementDescriptor, 0, 35);
     }
 }

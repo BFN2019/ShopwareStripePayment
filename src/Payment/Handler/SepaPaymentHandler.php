@@ -37,7 +37,7 @@ class SepaPaymentHandler extends AbstractPaymentIntentPaymentHandler
                 'customer_acceptance' => [
                     'type' => 'online',
                     'online' => [
-                        'ip_address' => $_SERVER['REMOTE_ADDR'],
+                        'ip_address' => $_SERVER['REMOTE_ADDR'], // TODO: best way to retrieve this info?
                         'user_agent' => $_SERVER['HTTP_USER_AGENT'],
                     ],
                 ],
@@ -51,7 +51,7 @@ class SepaPaymentHandler extends AbstractPaymentIntentPaymentHandler
         ];
 
         $statementDescriptor = mb_substr(
-            $this->settingsService->getConfigValue('statementDescriptorSuffix', $salesChannelId) ?: '',
+            $this->paymentContext->getStatementDescriptor($salesChannelContext->getSalesChannel(), $order),
             0,
             22
         );
