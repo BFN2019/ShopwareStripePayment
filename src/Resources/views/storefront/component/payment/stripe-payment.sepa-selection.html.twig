@@ -1,0 +1,127 @@
+<div class="stripe-payment-sepa-form">
+    <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
+        <div class="alert--icon">
+            <i class="icon--element icon--cross"></i>
+        </div>
+        <div class="alert--content error-content"></div>
+    </div>
+    <div>
+        {% if stripeData.allowSavingSepaBankAccounts or (stripeData.availableSepaBankAccounts and stripeData.availableSepaBankAccounts|length > 0) %}
+            <div class="panel--tr saved-sepa-bank-accounts">
+                <label>
+                    <span>{{ "stripe_payment.form.sepa.sepa_bank_account_selection.saved_sepa_bank_accounts"|trans }}</span>
+                    <div class="select-field">
+                        <select class="stripe-saved-sepa-bank-accounts panel--td">
+                            <option value="new" selected>
+                                <span>{{ "stripe_payment.form.sepa.sepa_bank_account_selection.new_sepa_bank_account"|trans }}</span>
+                            </option>
+                            {% for sepaBankAccount in stripeData.availableSepaBankAccounts %}
+                                <option value="{{ sepaBankAccount.id }}">
+                                    {{ sepaBankAccount.name }} | {{ sepaBankAccount.country }}&bull;&bull;&bull;&bull;{{ sepaBankAccount.last4 }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </label>
+            </div>
+        {% endif %}
+        {# IBAN #}
+        <div class="panel--tr stripe-sepa-field">
+            <label style="width: 100%;">
+                <span class="panel--td">{{ "stripe_payment.form.sepa.iban"|trans }} *</span>
+                <div class="stripe-element-sepa-iban panel--td"><!-- Stripe element is inserted here --></div>
+            </label>
+        </div>
+        {# Account owner #}
+        <div class="panel--tr stripe-sepa-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.sepa.account_owner"|trans }} *</span>
+                <input type="text" class="stripe-sepa-account-owner panel--td is--required" name="account_owner" required="required" value="{{ context.customer.activeBillingAddress.firstName }} {{ context.customer.activeBillingAddress.lastName }}">
+            </label>
+        </div>
+        {# EMail #}
+        <div class="panel--tr stripe-sepa-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.sepa.email"|trans }} *</span>
+                <input type="email" class="stripe-sepa-email panel--td is--required" name="email" required="required" value="{{ context.customer.email }}">
+            </label>
+        </div>
+        {# Street #}
+        <div class="panel--tr stripe-sepa-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.sepa.street"|trans }} *</span>
+                <input type="text" class="stripe-sepa-street panel--td is--required" name="street" required="required" value="{{ context.customer.activeBillingAddress.street }}">
+            </label>
+        </div>
+        {# ZIP code #}
+        <div class="panel--tr stripe-sepa-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.sepa.zip_code"|trans }} *</span>
+                <input type="text" class="stripe-sepa-zip-code panel--td is--required" name="zip_code" required="required" value="{{ context.customer.activeBillingAddress.zipcode }}">
+            </label>
+        </div>
+        {# City #}
+        <div class="panel--tr stripe-sepa-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.sepa.city"|trans }} *</span>
+                <input type="text" class="stripe-sepa-city panel--td is--required" name="city" required="required" value="{{ context.customer.activeBillingAddress.city }}">
+            </label>
+        </div>
+        {# Country #}
+        <div class="panel--tr stripe-sepa-field country-selection">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.sepa.country"|trans }} *</span>
+                <div class="select-field">
+                    <select class="stripe-sepa-country panel--td is--required" name="country" required="required">
+                        {% for country in stripeData.sepaCountryList %}
+                            <option value="{{ country.iso }}" {% if country.id is same as (context.customer.activeBillingAddress.countryId) %}selected="seclected"{% endif %}>
+                                {{ country.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </label>
+        </div>
+        {% if stripeData.allowSavingSepaBankAccounts %}
+            {# Save sepa bank account #}
+            <div class="panel--tr stripe-sepa-field">
+                <label>
+                    <span class="outer-checkbox">
+                        <div class="checkbox">
+                            <input class="stripe-save-sepa-bank-account" type="checkbox">
+                            <span class="checkbox--state"></span>
+                        </div>
+                    </span>
+                    <span class="checkox-label">{{ "stripe_payment.form.sepa.save_sepa_bank_account"|trans }}</span>
+                </label>
+            </div>
+        {% endif %}
+        {# A box for displaying validation errors #}
+        <div class="stripe-payment-validation-error-box alert is--error is--rounded" style="display: none;">
+            <div class="alert--icon">
+                <i class="icon--element icon--cross"></i>
+            </div>
+            <div class="alert--content error-content"></div>
+        </div>
+
+        {# A box for displaying the SEPA mandate authorization text #}
+        <div class="alert is--info is--rounded">
+            <div class="alert--icon">
+                <i class="icon--element icon--info"></i>
+            </div>
+            <div class="alert--content">
+                {{ "stripe_payment.form.sepa.mandate_info"|trans|replace({'[creditor]': 'TODO'}) }}
+            </div>
+        </div>
+
+        <div class="panel--tr stripe-sepa-field">
+            {{ "stripe_payment.form.required"|trans }}
+        </div>
+    </div>
+</div>
+<template data-stripe-payment-sepa-selection data-stripe-payment-sepa-selection-options="{{
+stripeData|merge({
+    'persistUrl': path('frontend.checkout.stripePayment.persist'),
+    'customerCountry': context.customer.activeBillingAddress.country.iso
+})|json_encode()|escape('html_attr')
+}}"></template>

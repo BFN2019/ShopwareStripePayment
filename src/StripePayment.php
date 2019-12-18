@@ -10,6 +10,7 @@ use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Stripe\ShopwarePlugin\Payment\Handler\BancontactPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\CardPaymentHandler;
+use Stripe\ShopwarePlugin\Payment\Handler\DigitalWalletsPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\GiropayPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\IdealPaymentHandler;
 use Stripe\ShopwarePlugin\Payment\Handler\KlarnaPaymentHandler;
@@ -137,6 +138,18 @@ class StripePayment extends Plugin
             'pluginId' => $pluginId,
         ];
 
+        // Check for existing 'DigitalWallets' payment method
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('handlerIdentifier', DigitalWalletsPaymentHandler::class));
+        $digitalWalletsPaymentMethodId = $paymentMethodRepository->searchIds($criteria, $context)->firstId();
+
+        $digitalWalletsPaymentMethod = [
+            'id' => $digitalWalletsPaymentMethodId,
+            'name' => 'Digital Wallets (via Stripe)',
+            'handlerIdentifier' => DigitalWalletsPaymentHandler::class,
+            'pluginId' => $pluginId,
+        ];
+
         $paymentMethodRepository->upsert([
             $sofortPaymentMethod,
             $cardPaymentMethod,
@@ -145,6 +158,7 @@ class StripePayment extends Plugin
             $giropayPaymentMethod,
             $idealPaymentMethod,
             $klarnaPaymentMethod,
+            $digitalWalletsPaymentMethod,
         ], $context);
 
         // TODO: Activate/deactivate payment methods upon plugin activation/deactivation and uninstall

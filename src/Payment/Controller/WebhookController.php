@@ -41,9 +41,16 @@ class WebhookController extends AbstractController
 
     /**
      * @RouteScope(scopes={"storefront"})
-     * @Route("/stripePayment/webhook/execute", name="stripePayment.webhook.execute", methods={"POST"})
+     * @Route("/stripePayment/webhook/execute", name="stripePayment.webhook.execute", methods={"POST"}, options={"seo"="false"})
      *
-     * @throws BadRequestHttpException
+     * @param Request $request
+     * @param Context $context
+     * @return Response
+     * @throws \Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException
+     * @throws \Shopware\Core\System\StateMachine\Exception\IllegalTransitionException
+     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineInvalidEntityIdException
+     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineInvalidStateFieldException
+     * @throws \Shopware\Core\System\StateMachine\Exception\StateMachineNotFoundException
      */
     public function executeWebhook(Request $request, Context $context): Response
     {

@@ -61,9 +61,10 @@
             },
             "sepa": {
                 "sepa_bank_account_selection": {
-                    "new_sepa_bank_account": "Neue SEPA Bankverbindung",
-                    "saved_sepa_bank_accounts": "Gespeicherte SEPA Bankverbindungen"
+                    "new_sepa_bank_account": "New SEPA bank account",
+                    "saved_sepa_bank_accounts": "Saved SEPA bank accounts"
                 },
+                "save_sepa_bank_account": "Save SEPA bank account",
                 "iban": "IBAN",
                 "account_owner": "Account owner",
                 "email": "E-Mail",

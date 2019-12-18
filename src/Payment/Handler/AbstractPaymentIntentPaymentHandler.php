@@ -77,7 +77,8 @@ abstract class AbstractPaymentIntentPaymentHandler implements AsynchronousPaymen
 
     abstract protected function createPaymentIntentConfig(
         AsyncPaymentTransactionStruct $transaction,
-        SalesChannelContext $salesChannelContext
+        SalesChannelContext $salesChannelContext,
+        RequestDataBag $dataBag
     ): array;
 
     public function __construct(
@@ -115,11 +116,13 @@ abstract class AbstractPaymentIntentPaymentHandler implements AsynchronousPaymen
 
             $stripeSessionConfig = $this->sessionService->getStripeSession();
             $this->validateSessionConfig($stripeSessionConfig);
+            $this->validateRequestDataBag($dataBag);
 
-            $paymentIntentConfig = $this->createPaymentIntentConfig($transaction, $salesChannelContext);
+            $paymentIntentConfig = $this->createPaymentIntentConfig($transaction, $salesChannelContext, $dataBag);
 
             $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
             $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
+
             $paymentIntent = $stripeApi->createPaymentIntent($paymentIntentConfig);
 
             $context = $salesChannelContext->getContext();
@@ -229,6 +232,10 @@ abstract class AbstractPaymentIntentPaymentHandler implements AsynchronousPaymen
     }
 
     protected function validateSessionConfig(SessionConfig $sessionConfig): void
+    {
+    }
+
+    protected function validateRequestDataBag(RequestDataBag $dataBag): void
     {
     }
 

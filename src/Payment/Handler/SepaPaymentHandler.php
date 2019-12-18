@@ -3,14 +3,18 @@
 namespace Stripe\ShopwarePlugin\Payment\Handler;
 
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
+use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Stripe\ShopwarePlugin\Payment\Services\SessionConfig;
 use Stripe\ShopwarePlugin\Payment\Util\Util;
 
 class SepaPaymentHandler extends AbstractPaymentIntentPaymentHandler
 {
-    protected function createPaymentIntentConfig(AsyncPaymentTransactionStruct $transaction, SalesChannelContext $salesChannelContext): array
-    {
+    protected function createPaymentIntentConfig(
+        AsyncPaymentTransactionStruct $transaction,
+        SalesChannelContext $salesChannelContext,
+        RequestDataBag $dataBag
+    ): array {
         $order = $transaction->getOrder();
         $orderTransaction = $transaction->getOrderTransaction();
         $context = $salesChannelContext->getContext();

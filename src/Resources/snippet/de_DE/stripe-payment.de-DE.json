@@ -18,6 +18,7 @@
                     "new_sepa_bank_account": "Neue SEPA Bankverbindung",
                     "saved_sepa_bank_accounts": "Gespeicherte SEPA Bankverbindungen"
                 },
+                "save_sepa_bank_account": "SEPA Bankverbindung speichern",
                 "iban": "IBAN",
                 "account_owner": "Kontoinhaber",
                 "email": "E-Mail",

@@ -28,5 +28,11 @@
                 <argument type="service" id="service_container"/>
             </call>
         </service>
+
+        <service id="Stripe\ShopwarePlugin\Payment\Controller\ApplePayController" public="true">
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
     </services>
 </container>

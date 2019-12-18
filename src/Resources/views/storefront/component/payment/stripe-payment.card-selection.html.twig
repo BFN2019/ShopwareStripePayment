@@ -1,0 +1,92 @@
+<div class="stripe-payment-card-form">
+    <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
+        <div class="alert--icon">
+            <i class="icon--element icon--cross"></i>
+        </div>
+        <div class="alert--content error-content"></div>
+    </div>
+    <div>
+        {% if stripeData.allowSavingCreditCard or stripeData.availableCards|length > 0 %}
+            <div class="panel--tr saved-cards">
+                <label>
+                    <span>{{ "stripe_payment.form.card.card_selection.saved_cards"|trans }}</span>
+                    <div class="select-field">
+                        <select class="stripe-saved-cards panel--td">
+                            <option value="new" selected>
+                                <span>{{ "stripe_payment.form.card.card_selection.new_card"|trans }}</span>
+                            </option>
+                            {% for card in stripeData.availableCards %}
+                                <option value="{{ card.id }}">
+                                    {{ card.name }} | {{ card.brand }} | &bull;&bull;&bull;&bull;{{ card.last4 }} | {{ "%02d"|format(card.exp_month) }}/{{ card.exp_year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </label>
+            </div>
+        {% endif %}
+        {# Card holder #}
+        <div class="panel--tr stripe-card-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.card.holder"|trans }} *</span>
+                <input type="text" size="20" class="stripe-card-holder panel--td" value="{{ context.customer.firstName }} {{ context.customer.lastName }}">
+            </label>
+        </div>
+        {# Card number #}
+        <div class="panel--tr stripe-card-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.card.number"|trans }} *</span>
+                <div class="stripe-element-card-number panel--td"><!-- Stripe element is inserted here --></div>
+            </label>
+        </div>
+        {# Expiry date #}
+        <div class="panel--tr stripe-card-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.card.expiry"|trans }} *</span>
+                <div class="stripe-element-card-expiry panel--td"><!-- Stripe element is inserted here --></div>
+            </label>
+        </div>
+        {# CVC #}
+        <div class="panel--tr stripe-card-field">
+            <label>
+                <span class="panel--td">{{ "stripe_payment.form.card.cvc"|trans }} *</span>
+                <div class="stripe-element-card-cvc panel--td"><!-- Stripe element is inserted here --></div>
+            </label>
+            <div class="stripe-card-cvc--help help panel--td"
+                 data-modalbox="true"
+                 data-content="{url controller=StripePaymentCard action=cvcInfo forceSecure}"
+                 data-mode="ajax"
+                 data-height="430"
+                 data-width="650">
+            </div>
+        </div>
+        {% if stripeData.allowSavingCreditCards %}
+            {# Save data #}
+            <div class="panel--tr stripe-card-field">
+                <label>
+                                <span class="outer-checkbox">
+                                    <div class="checkbox">
+                                        <input class="stripe-save-card" type="checkbox">
+                                        <span class="checkbox--state"></span>
+                                    </div>
+                                </span>
+                    <span class="checkox-label">{{ "stripe_payment.form.card.save_card"|trans }}</span>
+                </label>
+            </div>
+        {% endif %}
+        {# A box for displaying validation errors #}
+        <div class="stripe-payment-validation-error-box alert is--error is--rounded" style="display: none;">
+            <div class="alert--icon">
+                <i class="icon--element icon--cross"></i>
+            </div>
+            <div class="alert--content error-content"></div>
+        </div>
+
+        <div class="panel--tr stripe-card-field">
+            {{ "stripe_payment.form.required"|trans }}
+        </div>
+    </div>
+</div>
+<template data-stripe-payment-card-selection data-stripe-payment-card-selection-options="{{
+stripeData|merge({'persistUrl': path('frontend.checkout.stripePayment.persist')})|json_encode()|escape('html_attr')
+}}"></template>

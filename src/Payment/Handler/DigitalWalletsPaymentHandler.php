@@ -5,10 +5,9 @@ namespace Stripe\ShopwarePlugin\Payment\Handler;
 use Shopware\Core\Checkout\Payment\Cart\AsyncPaymentTransactionStruct;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Stripe\ShopwarePlugin\Payment\Services\SessionConfig;
 use Stripe\ShopwarePlugin\Payment\Util\Util;
 
-class CardPaymentHandler extends AbstractPaymentIntentPaymentHandler
+class DigitalWalletsPaymentHandler extends AbstractPaymentIntentPaymentHandler
 {
     protected function createPaymentIntentConfig(
         AsyncPaymentTransactionStruct $transaction,
@@ -29,11 +28,10 @@ class CardPaymentHandler extends AbstractPaymentIntentPaymentHandler
             $context
         );
 
-        $stripeSessionConfig = $this->sessionService->getStripeSession();
         $paymentIntentConfig = [
             'amount' => self::getPayableAmount($orderTransaction),
             'currency' => $this->getCurrency($order, $context)->getIsoCode(),
-            'payment_method' => $stripeSessionConfig->selectedCard['id'],
+            'payment_method' => $dataBag->get('stripeDigitalWalletPaymentMethodId'),
             'confirmation_method' => 'automatic',
             'confirm' => true,
             'return_url' => $transaction->getReturnUrl(),
@@ -57,18 +55,13 @@ class CardPaymentHandler extends AbstractPaymentIntentPaymentHandler
             $paymentIntentConfig['receipt_email'] = $customer->getEmail();
         }
 
-        if ($stripeSessionConfig->saveCardForFutureCheckouts) {
-            // Add the card to the Stripe customer
-            $paymentIntentConfig['save_payment_method'] = $stripeSessionConfig->saveCardForFutureCheckouts;
-        }
-
         return $paymentIntentConfig;
     }
 
-    protected function validateSessionConfig(SessionConfig $sessionConfig): void
+    protected function validateRequestDataBag(RequestDataBag $dataBag): void
     {
-        if (!$sessionConfig->selectedCard || !isset($sessionConfig->selectedCard['id'])) {
-            throw new \Exception('no card selected');
+        if (!$dataBag->has('stripeDigitalWalletPaymentMethodId')) {
+            throw new \Exception('no digital wallet payment method supplied');
         }
     }
 }
