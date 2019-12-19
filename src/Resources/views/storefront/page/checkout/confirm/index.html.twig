@@ -6,17 +6,33 @@
     {% if context.paymentMethod.formattedHandlerIdentifier is same as('handler_stripe_digitalwalletspaymenthandler') %}
         {% set stripeData = page.extensions.stripeData.data %}
         <template data-stripe-payment-digital-wallet-selection data-stripe-payment-digital-wallet-selection-options="{{
-        stripeData|json_encode()|escape('html_attr')
+        stripeData|merge({
+            'currencyCode': context.currency.isoCode,
+            'lineItems': page.cart.lineItems,
+            'amount': page.cart.price.totalPrice,
+            'shippingCost': page.cart.deliveries.first().shippingCosts.totalPrice,
+            'countryCode': context.customer.activeBillingAddress.country.iso,
+            'snippets': {
+                "shipping_cost": "stripe_payment.form.digital_wallets.shipping_cost"|trans,
+                "total": "stripe_payment.form.digital_wallets.total"|trans,
+                "error": "stripe_payment.form.error"|trans,
+                "errors": {
+                    "payment_api_unavailable": "stripe_payment.form.digital_wallets.errors.payment_api_unavailable"|trans,
+                    "connection_not_secure": "stripe_payment.form.digital_wallets.errors.connection_not_secure"|trans,
+                    "payment_cancelled": "stripe_payment.form.digital_wallets.errors.payment_cancelled"|trans
+                }
+            }
+        })|json_encode()|escape('html_attr')
         }}"></template>
     {% endif %}
 {% endblock %}
 
 {% block page_checkout_confirm_errors %}
     {{ parent() }}
-    <div id="stripe-payment-checkout-error-box" class="alert is--error is--rounded" style="display: none;">
-        <div class="alert--icon">
-            <i class="icon--element icon--cross"></i>
+    <div id="stripe-payment-checkout-error-box" role="alert" class="alert alert-danger" style="display: none;">
+        {% sw_icon 'blocked' %}
+        <div class="alert-content-container">
+            <div class="alert-content"></div>
         </div>
-        <div class="alert--content error-content"></div>
     </div>
 {% endblock %}

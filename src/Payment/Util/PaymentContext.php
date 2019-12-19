@@ -132,7 +132,7 @@ class PaymentContext
      * @param OrderEntity $order
      * @return string|null
      */
-    public function getStatementDescriptor(SalesChannelEntity $salesChannel, OrderEntity $order): ?string
+    public function getStatementDescriptor(SalesChannelEntity $salesChannel, OrderEntity $order = null): ?string
     {
         // Determine the prefix of the long descriptor
         $statementDescriptorPrefix = $this->settingsService->getConfigValue('statementDescriptorPrefix', $salesChannel->getId()) ?: '';
@@ -142,10 +142,13 @@ class PaymentContext
         }
         // TODO: use url as fallback as well?
 
-        if (!$statementDescriptorPrefix) {
-            $statementDescriptor = 'Ref. ' . $order->getOrderNumber();
-        } else {
-            $statementDescriptor = $statementDescriptorPrefix . ' Ref. ' . $order->getOrderNumber();
+        $statementDescriptor = $statementDescriptorPrefix;
+        if ($order) {
+            if (!$statementDescriptorPrefix) {
+                $statementDescriptor = 'Ref. ' . $order->getOrderNumber();
+            } else {
+                $statementDescriptor = $statementDescriptorPrefix . ' Ref. ' . $order->getOrderNumber();
+            }
         }
 
         // Strip all characters that are not allowed in statement descriptors

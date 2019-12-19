@@ -10,15 +10,13 @@ export default class StripePaymentDigitalWalletSelection extends Plugin {
          */
         stripePublicKey: '',
 
-        locale: 'en',
-
         lineItems: [],
 
         countryCode: 'DE',
 
         currencyCode: 'EUR',
 
-        amount: 123,
+        snippets: {},
     };
 
     paymentApiAvailable = false;
@@ -31,35 +29,32 @@ export default class StripePaymentDigitalWalletSelection extends Plugin {
         /* eslint-disable no-undef */
         this.stripeClient = Stripe(this.options.stripePublicKey);
 
-        this.paymentDisplayItems = this.options.lineItems.map(function (item) {
-            return {
-                label: item.articlename,
-                amount: Math.round(item.amountNumeric * 100),
-            };
-        });
+        this.paymentDisplayItems = this.options.lineItems.map((item) => ({
+            label: `${item.quantity}x ${item.label}`,
+            amount: Math.round(item.price.totalPrice * 100),
+        }));
         if (this.options.shippingCost) {
             this.paymentDisplayItems.push({
-                label: this.snippets.shippingCost,
+                label: this.options.snippets.shipping_cost,
                 amount: Math.round(this.options.shippingCost * 100),
             });
         }
 
+        this.findForm().on('submit', this.onFormSubmission.bind(this));
+
         this.createPaymentRequest(
             this.options.countryCode,
             this.options.currencyCode,
-            this.options.statementDescriptor || '',
             this.options.amount
         );
-
-        this.findForm().on('submit', { scope: this }, this.onFormSubmission);
     }
 
-    createPaymentRequest(countryCode, currencyCode, statementDescriptor, amount) {
+    createPaymentRequest(countryCode, currencyCode, amount) {
         this.paymentRequest = this.stripeClient.paymentRequest({
             country: countryCode.toUpperCase(),
             currency: currencyCode.toLowerCase(),
             total: {
-                label: statementDescriptor,
+                label: this.options.snippets.total,
                 amount: Math.round(amount * 100),
             },
             displayItems: this.paymentDisplayItems,
@@ -85,7 +80,7 @@ export default class StripePaymentDigitalWalletSelection extends Plugin {
         // Add listener for cancelled payment flow
         this.paymentRequest.on('cancel', () => {
             this.paymentMethodId = null;
-            this.handleStripeError('payment cancelled');
+            this.handleStripeError(this.options.snippets.errors.payment_cancelled);
             this.resetSubmitButton();
         });
 
@@ -96,11 +91,11 @@ export default class StripePaymentDigitalWalletSelection extends Plugin {
                 return;
             }
             if (!this.isSecureConnection()) {
-                this.handleStripeError('insecure connection');
+                this.handleStripeError(this.options.snippets.errors.connection_not_secure);
 
                 return;
             }
-            this.handleStripeError('not available');
+            this.handleStripeError(this.options.snippets.errors.payment_api_unavailable);
         });
     }
 
@@ -117,14 +112,12 @@ export default class StripePaymentDigitalWalletSelection extends Plugin {
      * @param event
      */
     onFormSubmission(event) {
-        const me = event.data.scope;
-
         if ($('input#tos').length === 1 && !$('input#tos').is(':checked')) {
             return undefined;
         }
 
         // Check if a Stripe payment method was generated and hence the form can be submitted
-        if (me.paymentMethodId) {
+        if (this.paymentMethodId) {
             return undefined;
         }
 
@@ -135,52 +128,56 @@ export default class StripePaymentDigitalWalletSelection extends Plugin {
         // using Stripe.js. Even though Stripe.js checks the used protocol and declines the payment if not served via
         // HTTPS, only a generic 'not available' error message is returned and the HTTPS warning is logged to the
         // console. We however want to show a specific error message that informs about the lack of security.
-        if (!me.isSecureConnection()) {
-            me.shouldResetSubmitButton = true;
-            me.handleStripeError('insecure connection');
+        if (!this.isSecureConnection()) {
+            this.resetSubmitButton();
+            this.handleStripeError(this.options.snippets.errors.connection_not_secure);
 
             return undefined;
         }
 
         // Check for general availability of the digital wallet payments
-        if (!me.paymentApiAvailable) {
-            me.shouldResetSubmitButton = true;
-            me.handleStripeError('payment api available');
+        if (!this.paymentApiAvailable) {
+            this.resetSubmitButton();
+            this.handleStripeError(this.options.snippets.errors.payment_api_unavailable);
 
             return undefined;
         }
 
         $('#stripe-payment-checkout-error-box').hide();
 
-        me.setSubmitButtonLoading();
+        this.setSubmitButtonLoading();
 
         // Process the payment
-        me.paymentRequest.show();
+        this.paymentRequest.show();
     }
 
     /**
-     * Finds both submit buttons on the page and adds the 'disabled' attribute as well as the loading indicator to each
-     * of them.
+     * Finds the submit button on the page and adds the 'disabled' attribute as well as a loading indicator.
      */
     setSubmitButtonLoading() {
-        $('#confirmFormSubmit button[type="submit"]').attr('disabled', 'disabled');
+        const submitButton = $('#confirmFormSubmit');
+        submitButton.html('<div class="loader" role="status" style="position: relative;top: 4px"><span class="sr-only">Loading...</span></div>' + submitButton.html()).attr('disabled', 'disabled');
     }
 
     /**
-     * Finds both submit buttons on the page and resets them by removing the 'disabled' attribute as well as the
+     * Finds the submit button on the page and resets it by removing the 'disabled' attribute as well as the
      * loading indicator.
      */
     resetSubmitButton() {
-        $('#confirmFormSubmit button[type="submit"]').removeAttr('disabled');
+        $('#confirmFormSubmit').removeAttr('disabled').find('.loader').remove();
     }
 
     /**
      * Sets the given message in the general error box and scrolls the page to make it visible.
      *
-     * @param String message A Stripe error message.
+     * @param {String} message
      */
     handleStripeError(message) {
-        $('#stripe-payment-checkout-error-box').show().children('.error-content').html(message);
+        $('#stripe-payment-checkout-error-box').show().find('.alert-content').html(`${this.options.snippets.error}: ${message}`);
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
     }
 
     /**

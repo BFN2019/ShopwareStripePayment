@@ -1,6 +1,7 @@
 {
     "stripe_payment": {
         "form": {
+            "error": "Error",
             "required": "* required",
             "card": {
                 "holder": "Card holder",
@@ -94,6 +95,15 @@
                             }
                         }
                     }
+                }
+            },
+            "digital_wallets": {
+                "shipping_cost": "Shipping cost",
+                "total": "Total",
+                "errors": {
+                    "payment_api_unavailable": "The Payment API is unavailable on this device / in this browser. Please select a different payment method.",
+                    "connection_not_secure": "Your connection to this shop is not secure. Digital Wallet Payments only work when served via SSL/TLS (HTTPS). Please select a different payment method.",
+                    "payment_cancelled": "The payment was cancelled."
                 }
             }
         }

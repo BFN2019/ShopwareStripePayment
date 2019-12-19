@@ -8,8 +8,10 @@
             <argument type="service" id="Stripe\ShopwarePlugin\Payment\Settings\SettingsService"/>
             <argument type="service" id="Stripe\ShopwarePlugin\Payment\StripeApi\StripeApiFactory"/>
             <argument type="service" id="Stripe\ShopwarePlugin\Payment\Services\SessionService"/>
+            <argument type="service" id="Stripe\ShopwarePlugin\Payment\Util\PaymentContext"/>
             <argument type="service" id="country.repository"/>
             <argument type="service" id="customer.repository"/>
+            <argument type="service" id="language.repository"/>
             <tag name="kernel.event_subscriber"/>
         </service>
     </services>
