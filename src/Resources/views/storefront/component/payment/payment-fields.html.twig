@@ -8,24 +8,24 @@
             <div class="panel--table stripe-payment-provider-logos">
                 <div class="panel--tr">
                     {% if payment.formattedHandlerIdentifier is same as('handler_stripe_digitalwalletspaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo apple-pay"></div>
-                        <div class="panel--td stripe-payment-provider-logo google-pay"></div>
+                        <div class="stripe-payment-provider-logo apple-pay"></div>
+                        <div class="stripe-payment-provider-logo google-pay"></div>
                     {% elseif payment.formattedHandlerIdentifier is same as('handler_stripe_bancontactpaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo bancontact"></div>
+                        <div class="stripe-payment-provider-logo bancontact"></div>
                     {% elseif payment.formattedHandlerIdentifier is same as('handler_stripe_cardpaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo visa"></div>
-                        <div class="panel--td stripe-payment-provider-logo mastercard"></div>
-                        <div class="panel--td stripe-payment-provider-logo american-express"></div>
+                        <div class="stripe-payment-provider-logo visa"></div>
+                        <div class="stripe-payment-provider-logo mastercard"></div>
+                        <div class="stripe-payment-provider-logo american-express"></div>
                     {% elseif payment.formattedHandlerIdentifier is same as('handler_stripe_giropaypaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo giropay"></div>
+                        <div class="stripe-payment-provider-logo giropay"></div>
                     {% elseif payment.formattedHandlerIdentifier is same as('handler_stripe_idealpaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo ideal"></div>
+                        <div class="stripe-payment-provider-logo ideal"></div>
                     {% elseif payment.formattedHandlerIdentifier is same as('handler_stripe_sepapaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo sepa"></div>
+                        <div class="stripe-payment-provider-logo sepa"></div>
                     {% elseif payment.formattedHandlerIdentifier is same as('handler_stripe_sofortpaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo sofort"></div>
+                        <div class="stripe-payment-provider-logo sofort"></div>
                     {% elseif payment.formattedHandlerIdentifier is same as('handler_stripe_klarnapaymenthandler') %}
-                        <div class="panel--td stripe-payment-provider-logo klarna"></div>
+                        <div class="stripe-payment-provider-logo klarna"></div>
                     {% endif %}
                 </div>
             </div>
@@ -33,6 +33,7 @@
         {% if payment.translated.description %}
             <p>{{ payment.translated.description|raw }}</p>
         {% endif %}
+        <div style="clear: left;"></div>
         {% if payment.formattedHandlerIdentifier is same as('handler_stripe_cardpaymenthandler') %}
             {% include 'component/payment/stripe-payment.card-selection.html.twig' %}
         {% endif %}

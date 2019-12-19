@@ -14,7 +14,7 @@ export default class StripePaymentSepaSelection extends Plugin {
 
         availableSepaBankAccounts: [],
 
-        locale: 'en',
+        snippets: {},
     };
 
     init() {
@@ -69,7 +69,7 @@ export default class StripePaymentSepaSelection extends Plugin {
             this.getStripeSepaForm().show();
             // Mount Stripe form fields again to the now active form and add other observers
             this.mountStripeElements();
-            this.observeForm(); //TODO: remove listeners as well on change
+            this.observeForm();
 
             // Make sure the card selection matches the internal state
             if (this.selectedSepaBankAccount) {
@@ -87,40 +87,26 @@ export default class StripePaymentSepaSelection extends Plugin {
      * the active Stripe card payment form.
      */
     mountStripeElements() {
-        // Define options to apply to all fields when creating them
-        const accountOwnerFieldEl = this.formEl('.stripe-sepa-account-owner');
-        const defaultOptions = {
-            style: {
-                base: {
-                    color: accountOwnerFieldEl.css('color'),
-                    fontFamily: accountOwnerFieldEl.css('font-family'),
-                    fontSize: accountOwnerFieldEl.css('font-size'),
-                    fontWeight: accountOwnerFieldEl.css('font-weight'),
-                    lineHeight: accountOwnerFieldEl.css('line-height'),
-                },
-            },
-        };
-
         // Define a closure to create all elements using the same 'Elements' instance
-        const elements = this.stripeClient.elements({
-            locale: this.options.locale,
-        });
+        const elements = this.stripeClient.elements();
         const me = this;
         const createAndMountStripeElement = function(type, mountSelector) {
             // Create the element and add the change listener
-            let options = defaultOptions;
+            let options = {};
             if (type === 'iban') {
-                options = Object.assign(options, {
+                options = {
                     supportedCountries: ['SEPA'],
-                    placeholderCountry: me.options.customerCountry,
-                });
+                    placeholderCountry: me.options.countryCode,
+                };
             }
             const element = elements.create(type, options);
             element.on('change', function(event) {
                 if (event.error && event.error.type === 'validation_error') {
                     me.markFieldInvalid(type, event.error.code, event.error.message);
+                    $(mountSelector).addClass('is-invalid');
                 } else {
                     me.markFieldValid(type);
+                    $(mountSelector).removeClass('is-invalid');
                 }
             });
 
@@ -151,16 +137,15 @@ export default class StripePaymentSepaSelection extends Plugin {
      */
     updateValidationErrors() {
         const errorBox = this.formEl('.stripe-payment-validation-error-box');
-        const boxContent = errorBox.find('.error-content');
+        const boxContent = errorBox.find('.alert-content');
         boxContent.empty();
         if (Object.keys(this.invalidFields).length > 0) {
             // Update the error box message and make it visible
             const listEl = $('<ul></ul>')
-                .addClass('alert--list')
+                .addClass('alert-list')
                 .appendTo(boxContent);
             Object.keys(this.invalidFields).forEach((key) => {
                 $('<li></li>')
-                    .addClass('list--entry')
                     .text(this.invalidFields[key])
                     .appendTo(listEl);
             });
@@ -218,10 +203,10 @@ export default class StripePaymentSepaSelection extends Plugin {
 
         // Validate the field
         if (elem.val().trim().length === 0) {
-            elem.addClass('instyle_error has--error');
+            elem.addClass('is-invalid');
             me.markFieldInvalid(name, ('invalid_' + name));
         } else {
-            elem.removeClass('instyle_error has--error');
+            elem.removeClass('is-invalid');
             me.markFieldValid(name);
         }
     }
@@ -246,8 +231,7 @@ export default class StripePaymentSepaSelection extends Plugin {
      * @param message (optioanl) The fallback error message used in case no 'errorCode' is provided or no respective, localised description exists.
      */
     markFieldInvalid(fieldId, errorCode, message) {
-        // TODO: add localized error with snippets if avail
-        this.invalidFields[fieldId] = message || 'Unknown error';
+        this.invalidFields[fieldId] = this.options.snippets.errors[errorCode || ''] || message || 'Unknown error';
         this.updateValidationErrors();
     }
 
@@ -321,9 +305,7 @@ export default class StripePaymentSepaSelection extends Plugin {
                 me.resetSubmitButtons();
 
                 // Display the error
-                // TODO: add localized error with snippets if avail
-                const message = result.error.message || 'Unknown error';
-                me.handleStripeError('Error: ' + message);
+                me.handleStripeError(result.error);
             } else {
                 // Save the card information
                 const sepaBankAccount = result.paymentMethod.sepa_debit;
@@ -373,6 +355,7 @@ export default class StripePaymentSepaSelection extends Plugin {
 
             // Show the save check box
             me.formEl('.stripe-sepa-field').show();
+            me.formEl('.stripe-sepa-row').show();
             me.formEl('.stripe-save-sepa-bank-account').show().prop('checked', true);
 
             return;
@@ -395,6 +378,7 @@ export default class StripePaymentSepaSelection extends Plugin {
 
             // Hide all sepa fields
             me.formEl('.stripe-sepa-field').hide();
+            me.formEl('.stripe-sepa-row').hide();
             me.formEl('.stripe-save-bank-account').hide();
 
             break;
@@ -409,7 +393,7 @@ export default class StripePaymentSepaSelection extends Plugin {
         // Reset the button first to prevent it from being added multiple loading indicators
         this.resetSubmitButtons();
         $('#confirmPaymentForm button[type="submit"], .confirm--actions button[form="confirmPaymentForm"]').each(function() {
-            $(this).html($(this).text() + '<div class="js--loading"></div>').attr('disabled', 'disabled');
+            $(this).html($(this).text() + '<div class="loader" role="status" style="position: relative;top: 4px"><span class="sr-only">Loading...</span></div>').attr('disabled', 'disabled');
         });
     }
 
@@ -419,18 +403,18 @@ export default class StripePaymentSepaSelection extends Plugin {
      */
     resetSubmitButtons() {
         $('#confirmPaymentForm button[type="submit"], .confirm--actions button[form="confirmPaymentForm"]').each(function() {
-            $(this).removeAttr('disabled').find('.js--loading').remove();
+            $(this).removeAttr('disabled').find('.loader').remove();
         });
     }
 
     /**
-     * Sets the given message in the general error box and scrolls the page to make it visible.
+     * Sets the translated error message in the general error box.
      *
-     * @param String message A Stripe error message.
+     * @param stripeError
      */
-    handleStripeError(message) {
-        // Display the error information above the credit card form and scroll to its position
-        this.formEl('.stripe-payment-error-box').show().children('.error-content').html(message);
+    handleStripeError(stripeError) {
+        const messageToDisplay = this.options.snippets.error[stripeError.code || ''] || stripeError.message || 'Unknown error';
+        this.formEl('.stripe-payment-error-box').show().find('.alert-content').html(`${this.options.snippets.error}: ${messageToDisplay}`);
     }
 
     /**

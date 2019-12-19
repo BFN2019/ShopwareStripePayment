@@ -157,7 +157,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
             $criteria,
             $salesChannelContext->getContext()
         )->get($salesChannelLanguageId);
-        $salesChannelLocale = $salesChannelLanguage ? $salesChannelLanguage->getLocale() : null;
+        $salesChannelLocale = $salesChannelLanguage ? $salesChannelLanguage->getLocale()->getCode() : null;
 
         $stripeData = new StripeData();
         $stripeData->assign([

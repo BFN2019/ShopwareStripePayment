@@ -28,7 +28,7 @@
                 "city": "Stadt",
                 "country": "Land",
                 "mandate_info": "Ich ermächtige / Wir ermächtigen (A) [creditor] sowie Stripe, den durchführenden Zahlungsdienstleister, Zahlungen von meinem / unserem Konto mittels Lastschrift einzuziehen. Zugleich (B) weise ich mein / weisen wir unser Kreditinstitut an, die von [creditor] bzw. Stripe auf mein / unser Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann / Wir können innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem / unserem Kreditinstitut vereinbarten Bedingungen.",
-                "error": {
+                "errors": {
                     "incomplete_iban": "Bitte geben Sie eine vollständige IBAN ein.",
                     "invalid_account_owner": "Bitte geben Sie den Namen des Kontoinhabers ein.",
                     "invalid_city": "Bitte geben Sie eine Stadt ein.",
@@ -37,7 +37,7 @@
                     "invalid_iban_country_code": "Der Ländercode der eingegebenen IBAN ist ungültig.",
                     "invalid_street": "Bitte geben Sie eine Anschrift ein.",
                     "invalid_zip_code": "Bitte geben Sie eine Postleitzahl ein.",
-                    "title": "Fehler"
+                    "invalid_email": "Bitte geben Sie eine E-Mail Adresse ein."
                 },
                 "checkout": {
                     "finish": {
