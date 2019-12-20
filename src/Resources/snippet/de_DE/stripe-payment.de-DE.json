@@ -27,7 +27,7 @@
                 "zip_code": "Postleitzahl",
                 "city": "Stadt",
                 "country": "Land",
-                "mandate_info": "Ich ermächtige / Wir ermächtigen (A) [creditor] sowie Stripe, den durchführenden Zahlungsdienstleister, Zahlungen von meinem / unserem Konto mittels Lastschrift einzuziehen. Zugleich (B) weise ich mein / weisen wir unser Kreditinstitut an, die von [creditor] bzw. Stripe auf mein / unser Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann / Wir können innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem / unserem Kreditinstitut vereinbarten Bedingungen.",
+                "mandate_info": "Ich ermächtige / Wir ermächtigen (A) %creditor% sowie Stripe, den durchführenden Zahlungsdienstleister, Zahlungen von meinem / unserem Konto mittels Lastschrift einzuziehen. Zugleich (B) weise ich mein / weisen wir unser Kreditinstitut an, die von %creditor% bzw. Stripe auf mein / unser Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann / Wir können innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem / unserem Kreditinstitut vereinbarten Bedingungen.",
                 "errors": {
                     "incomplete_iban": "Bitte geben Sie eine vollständige IBAN ein.",
                     "invalid_account_owner": "Bitte geben Sie den Namen des Kontoinhabers ein.",
@@ -39,15 +39,11 @@
                     "invalid_zip_code": "Bitte geben Sie eine Postleitzahl ein.",
                     "invalid_email": "Bitte geben Sie eine E-Mail Adresse ein."
                 },
-                "checkout": {
-                    "finish": {
-                        "mandate_info": {
-                            "title": "SEPA-Lastschriftmandat",
-                            "text": "Der fällige Betrag wird in den kommenden Tagen von dem angegebene Konto eingezogen. Das dazu von Ihnen erteilte SEPA-Lastschriftmandat kann über nachfolgenden Link eingesehen werden.",
-                            "open_mandate_button": {
-                                "title": "Lastschriftmandat öffnen"
-                            }
-                        }
+                "mandate_info_box": {
+                    "title": "SEPA-Lastschriftmandat",
+                    "text": "Der fällige Betrag wird in den kommenden Tagen von dem angegebene Konto eingezogen. Das dazu von Ihnen erteilte SEPA-Lastschriftmandat kann über nachfolgenden Link eingesehen werden.",
+                    "open_mandate_button": {
+                        "title": "Lastschriftmandat öffnen"
                     }
                 }
             },

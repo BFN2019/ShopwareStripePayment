@@ -8,6 +8,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Plugin\Util\PluginIdProvider;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
+use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Stripe\ShopwarePlugin\Payment\Services\SessionService;
 use Stripe\ShopwarePlugin\Payment\Settings\SettingsService;
 use Stripe\ShopwarePlugin\Payment\StripeApi\StripeApi;
@@ -77,18 +78,18 @@ class CheckoutSubscriber implements EventSubscriberInterface
     {
         return [
             CheckoutConfirmPageLoadedEvent::class => 'onCheckoutConfirmLoaded',
+            CheckoutFinishPageLoadedEvent::class => 'onCheckoutFinishLoaded',
         ];
     }
 
     public function onCheckoutConfirmLoaded(CheckoutConfirmPageLoadedEvent $event): void
     {
-        // TODO: move into api controller?
         $salesChannelContext = $event->getSalesChannelContext();
 
-        $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
+        $salesChannel = $salesChannelContext->getSalesChannel();
+        $salesChannelId = $salesChannel->getId();
         $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
 
-        // $this->sessionService->resetStripeSession();
         $customer = $salesChannelContext->getCustomer();
         $savedCards = [];
         $savedSepaBankAccounts = [];
@@ -130,19 +131,19 @@ class CheckoutSubscriber implements EventSubscriberInterface
 
         $allowSavingCreditCards = $this->settingsService->getConfigValue(
             'allowSavingCreditCards',
-            $salesChannelContext->getSalesChannel()->getId()
+            $salesChannel->getId()
         );
         $allowSavingSepaBankAccounts = $this->settingsService->getConfigValue(
             'allowSavingSepaBankAccounts',
-            $salesChannelContext->getSalesChannel()->getId()
+            $salesChannel->getId()
         );
         $stripePublicKey = $this->settingsService->getConfigValue(
             'stripePublicKey',
-            $salesChannelContext->getSalesChannel()->getId()
+            $salesChannel->getId()
         );
         $showPaymentProviderLogos = $this->settingsService->getConfigValue(
             'showPaymentProviderLogos',
-            $salesChannelContext->getSalesChannel()->getId()
+            $salesChannel->getId()
         );
 
         // TODO: filter sepa countries?
@@ -150,7 +151,7 @@ class CheckoutSubscriber implements EventSubscriberInterface
         );
 
         // Retrieve the sales channel locale
-        $salesChannelLanguageId = $salesChannelContext->getSalesChannel()->getLanguageId();
+        $salesChannelLanguageId = $salesChannel->getLanguageId();
         $criteria = new Criteria([$salesChannelLanguageId]);
         $criteria->addAssociation('locale');
         $salesChannelLanguage = $this->languageRepository->search(
@@ -172,6 +173,56 @@ class CheckoutSubscriber implements EventSubscriberInterface
                 'availableSepaBankAccounts' => $savedSepaBankAccounts,
                 'showPaymentProviderLogos' => $showPaymentProviderLogos,
                 'salesChannelLocale' => $salesChannelLocale,
+                'salesChannelName' => $salesChannel->getName(),
+            ],
+        ]);
+
+        $event->getPage()->addExtension('stripeData', $stripeData);
+    }
+
+    public function onCheckoutFinishLoaded(CheckoutFinishPageLoadedEvent $event): void
+    {
+        $formattedPaymentHandlerIdentifier = $event->getSalesChannelContext()->getPaymentMethod(
+        )->getFormattedHandlerIdentifier();
+        if ($formattedPaymentHandlerIdentifier !== 'handler_stripe_sepapaymenthandler') {
+            return;
+        }
+        $order = $event->getPage()->getOrder();
+        $orderTransaction = $order->getTransactions()->first();
+        if (!$orderTransaction) {
+            return;
+        }
+        $orderTransactionCustomFields = $orderTransaction->getCustomFields();
+        if (!$orderTransactionCustomFields
+            || !isset($orderTransactionCustomFields['stripe_payment_context']['payment']['charge_id'])
+        ) {
+            return;
+        }
+
+        $salesChannelId = $event->getSalesChannelContext()->getSalesChannel()->getId();
+        $stripeApi = $this->stripeApiFactory->getStripeApiForSalesChannel($salesChannelId);
+        $chargeId = $orderTransactionCustomFields['stripe_payment_context']['payment']['charge_id'];
+        $charge = $stripeApi->getCharge($chargeId);
+        if (!$charge->payment_method_details
+            || !$charge->payment_method_details->sepa_debit
+            || !$charge->payment_method_details->sepa_debit->mandate
+        ) {
+            return;
+        }
+        $mandateId = $charge->payment_method_details->sepa_debit->mandate;
+        $mandate = $stripeApi->getMandate($mandateId);
+        if (!$mandate->payment_method_details
+            || !$mandate->payment_method_details->sepa_debit
+            || !$mandate->payment_method_details->sepa_debit->url
+        ) {
+            return;
+        }
+        $mandateUrl = $mandate->payment_method_details->sepa_debit->url;
+
+        $stripeData = new StripeData();
+        $stripeData->assign([
+            'data' => [
+                'mandateUrl' => $mandateUrl,
             ],
         ]);
 

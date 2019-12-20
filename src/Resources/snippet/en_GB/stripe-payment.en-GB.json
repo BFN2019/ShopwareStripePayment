@@ -73,7 +73,7 @@
                 "zip_code": "Postal code",
                 "city": "City",
                 "country": "Country",
-                "mandate_info": "By signing this mandate form, you authorise (A) [creditor] and Stripe, our payment service provider, to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with the instructions from [creditor] and Stripe. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited.",
+                "mandate_info": "By signing this mandate form, you authorise (A) %creditor% and Stripe, our payment service provider, to send instructions to your bank to debit your account and (B) your bank to debit your account in accordance with the instructions from %creditor% and Stripe. As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account was debited.",
                 "errors": {
                     "incomplete_iban": "Please enter a complete IBAN.",
                     "invalid_account_owner": "Please enter the bank account owner's name.",
@@ -85,15 +85,11 @@
                     "invalid_zip_code": "Please enter a postal code.",
                     "invalid_email": "Please enter an email address."
                 },
-                "checkout": {
-                    "finish": {
-                        "mandate_info": {
-                            "title": "SEPA direct debit mandate",
-                            "text": "The payable amount will be debited from the entered bank account within a few days. The respective SEPA direct debit mandate can be viewed via the following link.",
-                            "open_mandate_button": {
-                                "title": "Open mandate"
-                            }
-                        }
+                "mandate_info_box": {
+                    "title": "SEPA direct debit mandate",
+                    "text": "The payable amount will be debited from the entered bank account within a few days. The respective SEPA direct debit mandate can be viewed via the following link.",
+                    "open_mandate_button": {
+                        "title": "Open mandate"
                     }
                 }
             },

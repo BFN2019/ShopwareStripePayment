@@ -21,7 +21,7 @@
     ],
     "require": {
         "php": "~7.2",
-        "stripe/stripe-php": "^7.0"
+        "stripe/stripe-php": "^7.14.2"
     },
     "require-dev": {
         "viison/style-guide": "*"

@@ -1,0 +1,36 @@
+{% sw_extends '@Storefront/page/checkout/finish/index.html.twig' %}
+
+{% block page_checkout_finish_details %}
+    {{ parent() }}
+    {% if context.paymentMethod.formattedHandlerIdentifier is same as('handler_stripe_sepapaymenthandler')
+        and page.extensions.stripeData
+        and page.extensions.stripeData.data
+        and page.extensions.stripeData.data.mandateUrl
+    %}
+        {% set stripeData = page.extensions.stripeData.data %}
+        <div class="stripe-payment-sepa-mandate">
+            <div role="alert" class="alert alert-info alert-has-icon">
+                {% sw_icon 'info' %}
+                <div class="alert-content-container">
+                    <div class="alert-heading h5">
+                        {{ "stripe_payment.form.sepa.mandate_info_box.title"|trans }}
+                    </div>
+                    <div class="alert-content">
+                        <div>
+                            {{ "stripe_payment.form.sepa.mandate_info_box.text"|trans }}
+                        </div>
+                        <div style="margin-top: 8px">
+                            <a href="{{ stripeData.mandateUrl }}"
+                               class="btn btn-outline-secondary"
+                               target="_blank"
+                               title="{{ "stripe_payment.form.sepa.mandate_info_box.open_mandate_button.title"|trans }}">
+                                {{ "stripe_payment.form.sepa.mandate_info_box.open_mandate_button.title"|trans }}
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

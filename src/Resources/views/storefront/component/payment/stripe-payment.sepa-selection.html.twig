@@ -1,5 +1,5 @@
 <div class="stripe-payment-sepa-form">
-    <div id="stripe-payment-error-box" role="alert" class="alert alert-danger" style="display: none;">
+    <div id="stripe-payment-error-box" role="alert" class="alert alert-danger alert-has-icon" style="display: none;">
         {% sw_icon 'blocked' %}
         <div class="alert-content-container">
             <div class="alert-content"></div>
@@ -141,7 +141,7 @@
         </div>
 
         {# A box for displaying validation errors #}
-        <div role="alert" class="alert alert-danger stripe-payment-validation-error-box" style="display: none;">
+        <div role="alert" class="alert alert-danger alert-has-icon stripe-payment-validation-error-box" style="display: none;">
             {% sw_icon 'blocked' %}
             <div class="alert-content-container">
                 <div class="alert-content"></div>
@@ -149,11 +149,11 @@
         </div>
 
         {# A box for displaying the SEPA mandate authorization text #}
-        <div role="alert" class="alert alert-info">
+        <div role="alert" class="alert alert-info alert-has-icon">
             {% sw_icon 'info' %}
             <div class="alert-content-container">
                 <div class="alert-content">
-                    {{ "stripe_payment.form.sepa.mandate_info"|trans|replace({'[creditor]': 'TODO'}) }}
+                    {{ "stripe_payment.form.sepa.mandate_info"|trans({'%creditor%': stripeData.salesChannelName}) }}
                 </div>
             </div>
         </div>

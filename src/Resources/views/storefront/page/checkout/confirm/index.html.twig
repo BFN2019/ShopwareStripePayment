@@ -29,7 +29,7 @@
 
 {% block page_checkout_confirm_errors %}
     {{ parent() }}
-    <div id="stripe-payment-checkout-error-box" role="alert" class="alert alert-danger" style="display: none;">
+    <div id="stripe-payment-checkout-error-box" role="alert" class="alert alert-danger alert-has-icon" style="display: none;">
         {% sw_icon 'blocked' %}
         <div class="alert-content-container">
             <div class="alert-content"></div>

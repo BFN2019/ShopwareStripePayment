@@ -5,6 +5,7 @@ namespace Stripe\ShopwarePlugin\Payment\StripeApi;
 use Stripe\Charge;
 use Stripe\Customer;
 use Stripe\Event;
+use Stripe\Mandate;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\Source;
@@ -48,6 +49,13 @@ class StripeApi
         $this->initializeStripeApi();
 
         return Charge::create(self::patchMetadata($params));
+    }
+
+    public function getCharge(string $id): Charge
+    {
+        $this->initializeStripeApi();
+
+        return Charge::retrieve($id);
     }
 
     public function createPaymentIntent(array $params): PaymentIntent
@@ -143,6 +151,13 @@ class StripeApi
         $this->initializeStripeApi();
 
         return Customer::create(self::patchMetadata($params));
+    }
+
+    public function getMandate(string $id): Mandate
+    {
+        $this->initializeStripeApi();
+
+        return Mandate::retrieve($id);
     }
 
     public function getWebhookEvent(string $webhookPayload, string $webhookSignature): Event
