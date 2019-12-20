@@ -13,7 +13,7 @@
                     "new_card": "New card",
                     "saved_cards": "Saved cards"
                 },
-                "error": {
+                "errors": {
                     "api_connection_error": "Cannot connect to the payment provider's server. Please try again in a little bit.",
                     "card_declined": "Your card has been declined.",
                     "expired_card": "Your card has expired.",
@@ -32,7 +32,6 @@
                     "invalid_number": "Your card number is invalid.",
                     "processing_error": "An error occurred while processing your card. Please try again in a little bit.",
                     "processing_error_intransient": "An error occurred while processing your card.",
-                    "title": "Error",
                     "unexpected": "An unexpected error occurred.",
                     "no_card_selected": "No credit card selected.",
                     "card_not_found": "The selected credit card cannot be found."

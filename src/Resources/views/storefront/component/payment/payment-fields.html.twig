@@ -5,8 +5,8 @@
         {% set stripeData = page.extensions.stripeData.data %}
         <strong>{{ payment.translated.name }}</strong>
         {% if stripeData.showPaymentProviderLogos %}
-            <div class="panel--table stripe-payment-provider-logos">
-                <div class="panel--tr">
+            <div class="stripe-payment-provider-logos">
+                <div>
                     {% if payment.formattedHandlerIdentifier is same as('handler_stripe_digitalwalletspaymenthandler') %}
                         <div class="stripe-payment-provider-logo apple-pay"></div>
                         <div class="stripe-payment-provider-logo google-pay"></div>

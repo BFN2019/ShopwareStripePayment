@@ -14,7 +14,7 @@ export default class StripePaymentCardSelection extends Plugin {
 
         availableCards: [],
 
-        locale: 'en',
+        snippets: {},
     };
 
     init() {
@@ -49,7 +49,6 @@ export default class StripePaymentCardSelection extends Plugin {
     setSelectedCard(card) {
         this.selectedCard = card;
         if (this.selectedCard) {
-            console.log(`set card ${JSON.stringify(card)}`);
             this.selectedCardChanged = true;
         }
     }
@@ -69,7 +68,7 @@ export default class StripePaymentCardSelection extends Plugin {
             this.getStripeCardForm().show();
             // Mount Stripe form fields again to the now active form and add other observers
             this.mountStripeElements();
-            this.observeForm(); //TODO: remove listeners as well on change
+            this.observeForm();
 
             // Make sure the card selection matches the internal state
             if (this.selectedCard) {
@@ -102,9 +101,7 @@ export default class StripePaymentCardSelection extends Plugin {
         };
 
         // Define a closure to create all elements using the same 'Elements' instance
-        const elements = this.stripeClient.elements({
-            locale: this.options.locale,
-        });
+        const elements = this.stripeClient.elements();
         const me = this;
         const createAndMountStripeElement = function(type, mountSelector) {
             // Create the element and add the change listener
@@ -112,8 +109,10 @@ export default class StripePaymentCardSelection extends Plugin {
             element.on('change', function(event) {
                 if (event.error && event.error.type === 'validation_error') {
                     me.markFieldInvalid(type, event.error.code, event.error.message);
+                    $(mountSelector).addClass('is-invalid');
                 } else {
                     me.markFieldValid(type);
+                    $(mountSelector).removeClass('is-invalid');
                 }
             });
 
@@ -146,16 +145,15 @@ export default class StripePaymentCardSelection extends Plugin {
      */
     updateValidationErrors() {
         const errorBox = this.formEl('.stripe-payment-validation-error-box');
-        const boxContent = errorBox.find('.error-content');
+        const boxContent = errorBox.find('.alert-content');
         boxContent.empty();
         if (Object.keys(this.invalidFields).length > 0) {
             // Update the error box message and make it visible
             const listEl = $('<ul></ul>')
-                .addClass('alert--list')
+                .addClass('alert-list')
                 .appendTo(boxContent);
             Object.keys(this.invalidFields).forEach((key) => {
                 $('<li></li>')
-                    .addClass('list--entry')
                     .text(this.invalidFields[key])
                     .appendTo(listEl);
             });
@@ -274,9 +272,7 @@ export default class StripePaymentCardSelection extends Plugin {
                 me.resetSubmitButtons();
 
                 // Display the error
-                // TODO: add localized error with snippets if avail
-                const message = result.error.message || 'Unknown error';
-                me.handleStripeError('Error: ' + message);
+                me.handleStripeError(result.error);
             } else {
                 // Save the card information
                 const card = result.paymentMethod.card;
@@ -324,10 +320,10 @@ export default class StripePaymentCardSelection extends Plugin {
 
         // Validate the field
         if (elem.val().trim().length === 0) {
-            elem.addClass('instyle_error has--error');
+            elem.addClass('is-invalid');
             me.markFieldInvalid('cardHolder', 'invalid_card_holder');
         } else {
-            elem.removeClass('instyle_error has--error');
+            elem.removeClass('is-invalid');
             me.markFieldValid('cardHolder');
         }
     }
@@ -352,6 +348,7 @@ export default class StripePaymentCardSelection extends Plugin {
 
             // Show the save check box
             me.formEl('.stripe-card-field').show();
+            me.formEl('.stripe-card-row').show();
             me.formEl('.stripe-save-card').show().prop('checked', true);
 
             return;
@@ -372,6 +369,7 @@ export default class StripePaymentCardSelection extends Plugin {
 
             // Hide all card fields
             me.formEl('.stripe-card-field').hide();
+            me.formEl('.stripe-card-row').hide();
             me.formEl('.stripe-save-card').hide();
 
             break;
@@ -386,7 +384,7 @@ export default class StripePaymentCardSelection extends Plugin {
         // Reset the button first to prevent it from being added multiple loading indicators
         this.resetSubmitButtons();
         $('#confirmPaymentForm button[type="submit"], .confirm--actions button[form="confirmPaymentForm"]').each(function() {
-            $(this).html($(this).text() + '<div class="js--loading"></div>').attr('disabled', 'disabled');
+            $(this).html($(this).text() + '<div class="loader" role="status" style="position: relative;top: 4px"><span class="sr-only">Loading...</span></div>').attr('disabled', 'disabled');
         });
     }
 
@@ -396,18 +394,18 @@ export default class StripePaymentCardSelection extends Plugin {
      */
     resetSubmitButtons() {
         $('#confirmPaymentForm button[type="submit"], .confirm--actions button[form="confirmPaymentForm"]').each(function() {
-            $(this).removeAttr('disabled').find('.js--loading').remove();
+            $(this).removeAttr('disabled').find('.loader').remove();
         });
     }
 
     /**
-     * Sets the given message in the general error box and scrolls the page to make it visible.
+     * Sets the translated error message in the general error box.
      *
-     * @param String message A Stripe error message.
+     * @param stripeError
      */
-    handleStripeError(message) {
-        // Display the error information above the credit card form and scroll to its position
-        this.formEl('.stripe-payment-error-box').show().children('.error-content').html(message);
+    handleStripeError(stripeError) {
+        const messageToDisplay = this.options.snippets.error[stripeError.code || ''] || stripeError.message || 'Unknown error';
+        this.formEl('.stripe-payment-error-box').show().find('.alert-content').html(`${this.options.snippets.error}: ${messageToDisplay}`);
     }
 
     /**

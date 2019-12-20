@@ -49,7 +49,6 @@ export default class StripePaymentSepaSelection extends Plugin {
     setSelectedSepaBankAccount(sepaBankAccount) {
         this.selectedSepaBankAccount = sepaBankAccount;
         if (this.selectedSepaBankAccount) {
-            console.log(`set sepaBankAccount ${JSON.stringify(sepaBankAccount)}`);
             this.selectedSepaBankAccountChanged = true;
         }
     }

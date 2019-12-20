@@ -12,6 +12,29 @@
                 "card_selection": {
                     "new_card": "Neue Karte",
                     "saved_cards": "Gespeicherte Karten"
+                },
+                "errors": {
+                    "api_connection_error": "Die Verbindung zum Server des Zahlungsdienstleisters kann derzeit nicht hergestellt werden. Bitte versuchen Sie es in Kürze erneut.",
+                    "card_declined": "Ihre Kreditkarte wurde abgelehnt.",
+                    "expired_card": "Die Kreditkarte ist nicht mehr gültig.",
+                    "incomplete_card": "Bitte gebene Sie ihre Kreditkartendaten ein.",
+                    "incomplete_cvc": "Die eingegebene Prüfziffer (CVC) ist unvollständig.",
+                    "incomplete_expiry": "Das eingegebene Gültigkeitsdatum ist unvollständig",
+                    "incomplete_number": "Die eingegebene Kreditkartennummer ist unvollständig.",
+                    "incorrect_cvc": "Die eingegebene Prüfziffer (CVC) ist falsch.",
+                    "incorrect_number": "Die eingegebene Kreditkartennummer ist falsch.",
+                    "invalid_card_holder": "Bitte geben Sie den Namen des Karteninhabers ein.",
+                    "invalid_cvc": "Die eingegebene Prüfziffer (CVC) ist ungültig",
+                    "invalid_expiry_month": "Der eingegebene Gültigkeits-Monat ist ungültig.",
+                    "invalid_expiry_month_past": "Der eingegebene Gültigkeits-Monat liegt in der Vergangenheit.",
+                    "invalid_expiry_year": "Das eingegebene Gültigkeits-Jahr ist ungültig.",
+                    "invalid_expiry_year_past": "Das eingegebene Gültigkeits-Jahr liegt in der Vergangenheit.",
+                    "invalid_number": "Die eingegebene Kreditkartennummer ist ungültig.",
+                    "processing_error": "Beim Verarbeiten der Kreditkarte ist ein Fehler aufgetreten. Bitte versuchen Sie es in Kürze erneut.",
+                    "processing_error_intransient": "Beim Verarbeiten der Kreditkarte ist ein Fehler aufgetreten.",
+                    "unexpected": "Ein unerwarteter Fehler ist aufgetreten.",
+                    "no_card_selected": "Es ist keine Kreditkarte ausgewählt.",
+                    "card_not_found": "Die ausgewählte Kreditkarte wurde nicht gefunden."
                 }
             },
             "sepa": {

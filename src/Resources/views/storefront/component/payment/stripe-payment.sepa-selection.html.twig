@@ -1,5 +1,5 @@
 <div class="stripe-payment-sepa-form">
-    <div id="stripe-payment-error-box" role="alert" class="alert alert-danger alert-has-icon" style="display: none;">
+    <div class="stripe-payment-error-box" role="alert" class="alert alert-danger alert-has-icon" style="display: none;">
         {% sw_icon 'blocked' %}
         <div class="alert-content-container">
             <div class="alert-content"></div>
@@ -48,7 +48,7 @@
                         <label class="form-label" for="stripe-payment-account-owner-input">
                             {{ "stripe_payment.form.sepa.account_owner"|trans }} *
                         </label>
-                        <input type="text" id="stripe-payment-account-owner-input" class="stripe-sepa-account-owner  form-control" name="account_owner" required="required" value="{{ context.customer.activeBillingAddress.firstName }} {{ context.customer.activeBillingAddress.lastName }}">
+                        <input type="text" id="stripe-payment-account-owner-input" class="stripe-sepa-account-owner form-control" name="account_owner" required="required" value="{{ context.customer.activeBillingAddress.firstName }} {{ context.customer.activeBillingAddress.lastName }}">
                     </div>
                 </div>
             </div>

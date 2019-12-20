@@ -1,92 +1,206 @@
-<div class="stripe-payment-card-form">
-    <div class="stripe-payment-error-box alert is--error is--rounded" style="display: none;">
-        <div class="alert--icon">
-            <i class="icon--element icon--cross"></i>
+<div class="modal fade stripe-payment-card-cvc-info-wrapper"
+     id="stripe-payment-card-cvc-info-wrapper"
+     style="padding-right: 15px"
+     tabindex="-1"
+     role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered"
+         role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title h5">
+                    cvc info
+                </div>
+                <button type="button"
+                        class="modal-close close"
+                        aria-label="Close"
+                        onclick="$('#stripe-payment-card-cvc-info-wrapper').modal('hide')">
+                                        <span aria-hidden="true">
+                                            {% sw_icon 'x' style { 'size': 'sm' } %}
+                                        </span>
+                </button>
+            </div>
+            <div class="modal-body row">
+                <div class="stripe-payment-visa stripe-payment-card-cvc-info-popup-cardtype col-md-6">
+                    <div class="stripe-payment-card-cvc-header" style="display: flex; justify-content: space-between">
+                                            <span class="stripe-payment-card-cvc-header-title">
+                                                {{ "stripe_payment.form.card.cvc_info.visa_mastercard.header.title.card"|trans }}<br>
+                                                <strong>{{ "stripe_payment.form.card.cvc_info.visa_mastercard.header.title.front"|trans }}</strong>
+                                            </span>
+                        <div class="stripe-payment-card-cvc-header-logos">
+                            <div class="stripe-payment-provider-logo mastercard"></div>
+                            <div class="stripe-payment-provider-logo visa"></div>
+                        </div>
+                    </div>
+                    <img style="width: 100%" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAxNy4wLjIsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB3aWR0aD0iMzEwcHgiIGhlaWdodD0iMTgwcHgiIHZpZXdCb3g9IjAgMCAzMTAgMTgwIiBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAzMTAgMTgwIiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxnPg0KCTxnPg0KCQk8cGF0aCBmaWxsPSIjRjBGMEYwIiBkPSJNMzAxLjUsMTY1LjZjMCw3Ljk1My02LjcxNSwxNC40LTE1LDE0LjRoLTI3MGMtOC4yODQsMC0xNS02LjQ0Ny0xNS0xNC40VjE0LjRDMS41LDYuNDQ3LDguMjE2LDAsMTYuNSwwDQoJCQloMjcwYzguMjg1LDAsMTUsNi40NDcsMTUsMTQuNFYxNjUuNnoiLz4NCgk8L2c+DQoJPHJlY3QgeD0iMS41IiB5PSIzNSIgZmlsbD0iIzU1NTU1NSIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MCIvPg0KCTxyZWN0IHg9IjEuNSIgeT0iNzUiIGZpbGw9IiNGRkZGRkYiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDAiLz4NCgk8Zz4NCgkJPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTI3NC45MjcsMTI3LjA3M2MtMTcuNjg2LDAtMzIuMDczLTE0LjM4OS0zMi4wNzMtMzIuMDc0YzAtMTcuNjg1LDE0LjM4OC0zMi4wNzIsMzIuMDczLTMyLjA3Mg0KCQkJUzMwNyw3Ny4zMTQsMzA3LDk0Ljk5OUMzMDcsMTEyLjY4NSwyOTIuNjEyLDEyNy4wNzMsMjc0LjkyNywxMjcuMDczeiIvPg0KCQk8cGF0aCBmaWxsPSIjMzMzMzMzIiBkPSJNMjc0LjkyNyw2NC40MjdjMTYuODU4LDAsMzAuNTczLDEzLjcxNSwzMC41NzMsMzAuNTcyYzAsMTYuODU4LTEzLjcxNSwzMC41NzMtMzAuNTczLDMwLjU3Mw0KCQkJYy0xNi44NTgsMC0zMC41NzMtMTMuNzE1LTMwLjU3My0zMC41NzNDMjQ0LjM1NCw3OC4xNDIsMjU4LjA2OSw2NC40MjcsMjc0LjkyNyw2NC40MjcgTTI3NC45MjcsNjEuNDI3DQoJCQljLTE4LjU0MiwwLTMzLjU3MywxNS4wMzEtMzMuNTczLDMzLjU3MmMwLDE4LjU0MiwxNS4wMzEsMzMuNTczLDMzLjU3MywzMy41NzNjMTguNTQyLDAsMzMuNTczLTE1LjAzMSwzMy41NzMtMzMuNTczDQoJCQlDMzA4LjUsNzYuNDU5LDI5My40NjksNjEuNDI3LDI3NC45MjcsNjEuNDI3TDI3NC45MjcsNjEuNDI3eiIvPg0KCTwvZz4NCgk8dGV4dCB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAxIDEzOS41IDEwMikiPjx0c3BhbiB4PSIwIiB5PSIwIiBmaWxsPSIjQzBDMEMwIiBmb250LWZhbWlseT0iJ09DUkFTdGQnIiBmb250LXNpemU9IjE4Ij5YWFhYWFhYICA8L3RzcGFuPjx0c3BhbiB4PSIxMTYuNjM4IiB5PSIwIiBmaWxsPSIjRkYwMDAwIiBmb250LWZhbWlseT0iJ09DUkFTdGQnIiBmb250LXNpemU9IjE4Ij5YWFg8L3RzcGFuPjwvdGV4dD4NCjwvZz4NCjwvc3ZnPg0K" alt="">
+                    <div class="stripe-payment-card-cvc-infotext">
+                        <strong>{{ "stripe_payment.form.card.cvc_info.visa_mastercard.title"|trans }}:</strong> {{ "stripe_payment.form.card.cvc_info.visa_mastercard.message"|trans }}
+                    </div>
+                </div>
+                <div class="stripe-payment-amex stripe-payment-card-cvc-info-popup-cardtype col-md-6">
+                    <div class="stripe-payment-card-cvc-header" style="display: flex; justify-content: space-between">
+                                            <span class="stripe-payment-card-cvc-header-title">
+                                                {{ "stripe_payment.form.card.cvc_info.amex.header.title.card"|trans }}<br>
+                                                <strong>{{ "stripe_payment.form.card.cvc_info.amex.header.title.back"|trans }}</strong>
+                                            </span>
+                        <div class="stripe-payment-card-cvc-header-logos">
+                            <div class="stripe-payment-provider-logo american-express"></div>
+                        </div>
+                    </div>
+                    <img style="width: 100%" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAxNy4wLjIsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB3aWR0aD0iMzEwcHgiIGhlaWdodD0iMTgwcHgiIHZpZXdCb3g9IjAgMCAzMTAgMTgwIiBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAzMTAgMTgwIiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxnPg0KCTxnPg0KCQk8cGF0aCBmaWxsPSIjRjBGMEYwIiBkPSJNMjAsMTc5LjVjLTcuOTk1LDAtMTQuNS02LjIzNS0xNC41LTEzLjg5OVYxNC40QzUuNSw2LjczNSwxMi4wMDUsMC41LDIwLDAuNWgyNzANCgkJCWM3Ljk5NSwwLDE0LjUsNi4yMzUsMTQuNSwxMy45djE1MS4yMDFjMCw3LjY2NC02LjUwNSwxMy44OTktMTQuNSwxMy44OTlIMjB6Ii8+DQoJCTxwYXRoIGZpbGw9IiNFMEUwRTAiIGQ9Ik0yOTAsMWM3LjcyLDAsMTQsNi4wMTEsMTQsMTMuNHYxNTEuMmMwLDcuMzg5LTYuMjgsMTMuNC0xNCwxMy40SDIwYy03LjcyLDAtMTQtNi4wMTEtMTQtMTMuNFYxNC40DQoJCQlDNiw3LjAxMSwxMi4yOCwxLDIwLDFIMjkwIE0yOTAsMEgyMEMxMS43MTYsMCw1LDYuNDQ3LDUsMTQuNHYxNTEuMmMwLDcuOTUzLDYuNzE2LDE0LjQsMTUsMTQuNGgyNzBjOC4yODUsMCwxNS02LjQ0NywxNS0xNC40DQoJCQlWMTQuNEMzMDUsNi40NDcsMjk4LjI4NSwwLDI5MCwwTDI5MCwweiIvPg0KCTwvZz4NCgk8dGV4dCB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAxIDMyIDExNCkiIGZpbGw9IiNDMEMwQzAiIGZvbnQtZmFtaWx5PSInT0NSQVN0ZCciIGZvbnQtc2l6ZT0iMTgiPlhYWFggWFhYWCBYWFhYIFhYWFg8L3RleHQ+DQoJPGc+DQoJCTxwYXRoIGZpbGw9IiNGRkZGRkYiIGQ9Ik0yNjMuNDI3LDExNS4wNzNjLTE3LjY4NiwwLTMyLjA3My0xNC4zODktMzIuMDczLTMyLjA3NGMwLTE3LjY4NSwxNC4zODgtMzIuMDcyLDMyLjA3My0zMi4wNzINCgkJCVMyOTUuNSw2NS4zMTUsMjk1LjUsODNDMjk1LjUsMTAwLjY4NSwyODEuMTEyLDExNS4wNzMsMjYzLjQyNywxMTUuMDczeiIvPg0KCQk8cGF0aCBmaWxsPSIjMzMzMzMzIiBkPSJNMjYzLjQyNyw1Mi40MjdjMTYuODU4LDAsMzAuNTczLDEzLjcxNSwzMC41NzMsMzAuNTcyYzAsMTYuODU4LTEzLjcxNSwzMC41NzMtMzAuNTczLDMwLjU3Mw0KCQkJYy0xNi44NTgsMC0zMC41NzMtMTMuNzE1LTMwLjU3My0zMC41NzNDMjMyLjg1Myw2Ni4xNDIsMjQ2LjU2OSw1Mi40MjcsMjYzLjQyNyw1Mi40MjcgTTI2My40MjcsNDkuNDI3DQoJCQljLTE4LjU0MiwwLTMzLjU3MywxNS4wMzEtMzMuNTczLDMzLjU3MmMwLDE4LjU0MiwxNS4wMzEsMzMuNTczLDMzLjU3MywzMy41NzNjMTguNTQyLDAsMzMuNTczLTE1LjAzMSwzMy41NzMtMzMuNTczDQoJCQlDMjk3LDY0LjQ1OSwyODEuOTY5LDQ5LjQyNywyNjMuNDI3LDQ5LjQyN0wyNjMuNDI3LDQ5LjQyN3oiLz4NCgk8L2c+DQoJPHRleHQgdHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgMSAyNDcgODkpIiBmaWxsPSIjRkYwMDAwIiBmb250LWZhbWlseT0iJ09DUkFTdGQnIiBmb250LXNpemU9IjE0Ij5YWFg8L3RleHQ+DQo8L2c+DQo8L3N2Zz4NCg==" alt="">
+                    <div class="stripe-payment-card-cvc-infotext">
+                        <strong>{{ "stripe_payment.form.card.cvc_info.amex.title"|trans }}:</strong> {{ "stripe_payment.form.card.cvc_info.amex.message"|trans }}
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="alert--content error-content"></div>
+    </div>
+</div>
+<div class="stripe-payment-card-form">
+    <div class="stripe-payment-error-box" role="alert" class="alert alert-danger alert-has-icon" style="display: none;">
+        {% sw_icon 'blocked' %}
+        <div class="alert-content-container">
+            <div class="alert-content"></div>
+        </div>
     </div>
     <div>
         {% if stripeData.allowSavingCreditCard or stripeData.availableCards|length > 0 %}
-            <div class="panel--tr saved-cards">
-                <label>
-                    <span>{{ "stripe_payment.form.card.card_selection.saved_cards"|trans }}</span>
-                    <div class="select-field">
-                        <select class="stripe-saved-cards panel--td">
-                            <option value="new" selected>
-                                <span>{{ "stripe_payment.form.card.card_selection.new_card"|trans }}</span>
-                            </option>
-                            {% for card in stripeData.availableCards %}
-                                <option value="{{ card.id }}">
-                                    {{ card.name }} | {{ card.brand }} | &bull;&bull;&bull;&bull;{{ card.last4 }} | {{ "%02d"|format(card.exp_month) }}/{{ card.exp_year }}
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <div class="saved-cards">
+                        <label class="form-label" for="stripe-payment-saved-cards-select">
+                            {{ "stripe_payment.form.card.card_selection.saved_cards"|trans }}
+                        </label>
+                        <div class="select-field">
+                            <select id="stripe-payment-saved-saved-cards-select" class="stripe-saved-cards custom-select">
+                                <option value="new" selected>
+                                    <span>{{ "stripe_payment.form.card.card_selection.new_card"|trans }}</span>
                                 </option>
-                            {% endfor %}
-                        </select>
+                                {% for card in stripeData.availableCards %}
+                                    <option value="{{ card.id }}">
+                                        {{ card.name }} | {{ card.brand }} | &bull;&bull;&bull;&bull;{{ card.last4 }} | {{ "%02d"|format(card.exp_month) }}/{{ card.exp_year }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
-                </label>
+                </div>
             </div>
         {% endif %}
-        {# Card holder #}
-        <div class="panel--tr stripe-card-field">
-            <label>
-                <span class="panel--td">{{ "stripe_payment.form.card.holder"|trans }} *</span>
-                <input type="text" size="20" class="stripe-card-holder panel--td" value="{{ context.customer.firstName }} {{ context.customer.lastName }}">
-            </label>
+        <div class="form-row stripe-card-row">
+            <div class="form-group col-md-6">
+                {# Card holder #}
+                <div class="stripe-card-field">
+                    <div>
+                        <label class="form-label" for="stripe-payment-card-holder-input">
+                            {{ "stripe_payment.form.card.holder"|trans }} *
+                        </label>
+                        <input type="text"
+                               id="stripe-payment-card-holder-input"
+                               class="stripe-card-holder form-control"
+                               value="{{ context.customer.firstName }} {{ context.customer.lastName }}"
+                               required="required">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-md-6">
+                {# Card number #}
+                <div class="stripe-card-field">
+                    <div>
+                        <label class="form-label" for="stripe-payment-card-number-input">
+                            {{ "stripe_payment.form.card.number"|trans }} *
+                        </label>
+                        <div id="stripe-payment-card-number-input" class="stripe-element-card-number form-control"><!-- Stripe element is inserted here --></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {# Card number #}
-        <div class="panel--tr stripe-card-field">
-            <label>
-                <span class="panel--td">{{ "stripe_payment.form.card.number"|trans }} *</span>
-                <div class="stripe-element-card-number panel--td"><!-- Stripe element is inserted here --></div>
-            </label>
-        </div>
-        {# Expiry date #}
-        <div class="panel--tr stripe-card-field">
-            <label>
-                <span class="panel--td">{{ "stripe_payment.form.card.expiry"|trans }} *</span>
-                <div class="stripe-element-card-expiry panel--td"><!-- Stripe element is inserted here --></div>
-            </label>
-        </div>
-        {# CVC #}
-        <div class="panel--tr stripe-card-field">
-            <label>
-                <span class="panel--td">{{ "stripe_payment.form.card.cvc"|trans }} *</span>
-                <div class="stripe-element-card-cvc panel--td"><!-- Stripe element is inserted here --></div>
-            </label>
-            <div class="stripe-card-cvc--help help panel--td"
-                 data-modalbox="true"
-                 data-content="{url controller=StripePaymentCard action=cvcInfo forceSecure}"
-                 data-mode="ajax"
-                 data-height="430"
-                 data-width="650">
+        <div class="form-row stripe-card-row">
+            <div class="form-group col-md-6">
+                {# Expiry date #}
+                <div class="stripe-card-field">
+                    <div>
+                        <label class="form-label" for="stripe-payment-card-expiry-input">
+                            {{ "stripe_payment.form.card.expiry"|trans }} *
+                        </label>
+                        <div id="stripe-payment-card-expiry-input" class="stripe-element-card-expiry form-control"><!-- Stripe element is inserted here --></div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group col-md-6">
+                <div style="display: flex; justify-content: space-around">
+                    {# CVC #}
+                    <div class="stripe-card-field" style="flex-grow: 1; margin-right: 0.5em">
+                        <div>
+                            <label class="form-label" for="stripe-payment-card-cvc-input">
+                                {{ "stripe_payment.form.card.cvc"|trans }} *
+                            </label>
+                            <div id="stripe-payment-card-cvc-input" class="stripe-element-card-cvc form-control"><!-- Stripe element is inserted here --></div>
+                        </div>
+                    </div>
+                    <div class="stripe-card-cvc-help" style="flex-grow: 0; position: relative; top: 2.35em"
+                         data-toggle="modal"
+                         data-modal-class="quickview-modal"
+                         data-target="#stripe-payment-card-cvc-info-wrapper">
+                        {% sw_icon 'info' %}
+                    </div>
+                </div>
             </div>
         </div>
         {% if stripeData.allowSavingCreditCards %}
-            {# Save data #}
-            <div class="panel--tr stripe-card-field">
-                <label>
-                                <span class="outer-checkbox">
-                                    <div class="checkbox">
-                                        <input class="stripe-save-card" type="checkbox">
-                                        <span class="checkbox--state"></span>
-                                    </div>
-                                </span>
-                    <span class="checkox-label">{{ "stripe_payment.form.card.save_card"|trans }}</span>
-                </label>
+            <div class="form-row stripe-card-row">
+                <div class="form-group">
+                    {# Save data #}
+                    <div class="stripe-card-field custom-control custom-checkbox">
+                        <input id="stripe-payment-save-card-checkbox" class="stripe-save-card custom-control-input" type="checkbox">
+                        <label class="custom-control-label" for="stripe-payment-save-card-checkbox">
+                            {{ "stripe_payment.form.card.save_card"|trans }}
+                        </label>
+                    </div>
+                </div>
             </div>
         {% endif %}
-        {# A box for displaying validation errors #}
-        <div class="stripe-payment-validation-error-box alert is--error is--rounded" style="display: none;">
-            <div class="alert--icon">
-                <i class="icon--element icon--cross"></i>
-            </div>
-            <div class="alert--content error-content"></div>
+
+        <div class="stripe-card-field">
+            {{ "stripe_payment.form.required"|trans }}
         </div>
 
-        <div class="panel--tr stripe-card-field">
-            {{ "stripe_payment.form.required"|trans }}
+        {# A box for displaying validation errors #}
+        <div role="alert" class="alert alert-danger alert-has-icon stripe-payment-validation-error-box" style="display: none;">
+            {% sw_icon 'blocked' %}
+            <div class="alert-content-container">
+                <div class="alert-content"></div>
+            </div>
         </div>
     </div>
 </div>
 <template data-stripe-payment-card-selection data-stripe-payment-card-selection-options="{{
-stripeData|merge({'persistUrl': path('frontend.checkout.stripePayment.persist')})|json_encode()|escape('html_attr')
+stripeData|merge({
+    'persistUrl': path('frontend.checkout.stripePayment.persist'),
+    'snippets': {
+        "error": "stripe_payment.form.error"|trans,
+        "errors": {
+            "api_connection_error": "stripe_payment.form.card.errors.api_connection_error"|trans,
+            "card_declined": "stripe_payment.form.card.errors.card_declined"|trans,
+            "expired_card": "stripe_payment.form.card.errors.expired_card"|trans,
+            "incomplete_card": "stripe_payment.form.card.errors.incomplete_card"|trans,
+            "incomplete_cvc": "stripe_payment.form.card.errors.incomplete_cvc"|trans,
+            "incomplete_expiry": "stripe_payment.form.card.errors.incomplete_expiry"|trans,
+            "incomplete_number": "stripe_payment.form.card.errors.incomplete_number"|trans,
+            "incorrect_cvc": "stripe_payment.form.card.errors.incorrect_cvc"|trans,
+            "incorrect_number": "stripe_payment.form.card.errors.incorrect_number"|trans,
+            "invalid_card_holder": "stripe_payment.form.card.errors.invalid_card_holder"|trans,
+            "invalid_cvc": "stripe_payment.form.card.errors.invalid_cvc"|trans,
+            "invalid_expiry_month": "stripe_payment.form.card.errors.invalid_expiry_month"|trans,
+            "invalid_expiry_month_past": "stripe_payment.form.card.errors.invalid_expiry_month_past"|trans,
+            "invalid_expiry_year": "stripe_payment.form.card.errors.invalid_expiry_year"|trans,
+            "invalid_expiry_year_past": "stripe_payment.form.card.errors.invalid_expiry_year_past"|trans,
+            "invalid_number": "stripe_payment.form.card.errors.invalid_number"|trans,
+            "processing_error": "stripe_payment.form.card.errors.processing_error"|trans,
+            "processing_error_intransient": "stripe_payment.form.card.errors.processing_error_intransient"|trans,
+            "unexpected": "stripe_payment.form.card.errors.unexpected"|trans,
+            "no_card_selected": "stripe_payment.form.card.errors.no_card_selected"|trans,
+            "card_not_found": "stripe_payment.form.card.errors.card_not_found"|trans,
+        }
+    }
+})|json_encode()|escape('html_attr')
 }}"></template>
