@@ -59,7 +59,11 @@ var StripePaymentCard = {
      */
     init: function(stripePublicKey, config) {
         var me = this;
-        me.stripeClient = Stripe(stripePublicKey);
+        
+        me.stripeClient = (config.hasOwnProperty('stripeConnectedAccountId'))
+            ? Stripe(stripePublicKey, {stripeAccount: config.stripeConnectedAccountId})
+            : Stripe(stripePublicKey);
+
         // Save config
         me.setSelectedCard((typeof config.card !== 'undefined') ? config.card : null);
         me.allCards = (typeof config.allCards !== 'undefined') ? config.allCards : [];

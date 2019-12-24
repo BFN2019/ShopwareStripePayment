@@ -66,6 +66,7 @@ class Checkout implements SubscriberInterface
             $stripeViewParams['publicKey'] = Util::stripePublicKey();
             $stripeViewParams['allowSavingCreditCard'] = Shopware()->Container()->get('plugins')->get('Frontend')->get('StripePayment')->Config()->get('allowSavingCreditCard', true);
             $stripeViewParams['showPaymentProviderLogos'] = Shopware()->Container()->get('plugins')->get('Frontend')->get('StripePayment')->Config()->get('showPaymentProviderLogos', true);
+            $stripeViewParams['connectedAccountId'] = Shopware()->Container()->get('plugins')->get('Frontend')->get('StripePayment')->Config()->get('stripeConnectedAccountId', null);
 
             // Check for an error
             if ($stripeSession->paymentError) {

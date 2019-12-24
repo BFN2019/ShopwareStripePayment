@@ -88,6 +88,18 @@ class Shopware_Plugins_Frontend_StripePayment_Bootstrap extends Shopware_Compone
                     'onAddConsoleCommand'
                 );
 
+                // Add a config element for the connected user account id
+                $this->Form()->setElement(
+                    'text',
+                    'stripeConnectedAccountId',
+                    [
+                        'label' => 'Stripe Connected Account ID',
+                        'description' => 'The connected account Stripe ID for this shop is automatically inserted here.',
+                        'value' => '',
+                        'scope' => Element::SCOPE_SHOP,
+                    ]
+                );
+
                 // Add a config element for the stripe secret key
                 $this->Form()->setElement(
                     'text',

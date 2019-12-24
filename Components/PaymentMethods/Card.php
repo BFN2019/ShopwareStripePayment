@@ -75,7 +75,7 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
             unset($stripeSession->saveCardForFutureCheckouts);
         }
 
-        $paymentIntent = Stripe\PaymentIntent::create($paymentIntentConfig);
+        $paymentIntent = Stripe\PaymentIntent::create($paymentIntentConfig, ['stripe_account' => $pluginConfig->get('stripeConnectedAccountId')]);
         if (!$paymentIntent) {
             throw new \Exception($this->getSnippet('payment_error/message/transaction_not_found'));
         }
