@@ -57,7 +57,8 @@
                 }
             };
             var stripePaymentCardConfig = {
-                locale: '{$stripePayment.locale}'
+                locale: '{$stripePayment.locale}',
+                stripeConnectedAccountId: '{$stripePayment.connectedAccountId}'
             };
             if ('{$stripePayment.rawSelectedCard}') {
                 stripePaymentCardConfig.card = JSON.parse('{$stripePayment.rawSelectedCard}');
