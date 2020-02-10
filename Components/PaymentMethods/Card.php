@@ -33,6 +33,9 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
         $userEmail = $user['additional']['user']['email'];
         $customerNumber = $user['additional']['user']['customernumber'];
 
+        // hacked in to get the application fee
+        $applicationFee = $this->getApplicationFeeAmount($amountInCents);
+
         // Use the token to create a new Stripe card payment intent
         $returnUrl = $this->assembleShopwareUrl([
             'controller' => 'StripePaymentIntent',
@@ -41,6 +44,7 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
         $paymentIntentConfig = [
             'amount' => $amountInCents,
             'currency' => $currencyCode,
+            'application_fee_amount' => $applicationFee, // hacked in application fee for Connect
             'payment_method' => $stripeSession->selectedCard['id'],
             'confirmation_method' => 'automatic',
             'confirm' => true,
@@ -113,5 +117,59 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
         }
 
         return [];
+    }
+
+    /**
+     * Function to iterate over the products in the basket and find their
+     * "purchaseprice" which is the amount that should go to the consultant.
+     *
+     * We then subtract that from the price of the product to get the
+     * "fee" that Befeni keeps.
+     *
+     * Note: this works for now, but does NOT take into account discounts or
+     * taxes and other complicated business rules so we should revisit this
+     * in future
+     *
+     * @param  int $chargedAmount
+     * @return float
+     */
+    protected function getApplicationFeeAmount($chargedAmount) {
+
+        $consultantTake = 0;
+
+        // get the `article IDs` for the products in the basket
+        $basket = Shopware()->Session()->sOrderVariables['sBasket'];
+
+        $productIds = [];
+
+        if(count($basket['content'])) {
+            foreach($basket['content'] as $product) {
+                $productIds[$product['articleID']] = (int) $product['quantity'];
+            }
+        }
+
+        // get the total `take` for the consultant for each product
+        $sql = '
+            SELECT articleID, purchaseprice FROM s_articles_details
+            WHERE articleID IN (?)
+        ';
+
+        $purchasePrices = Shopware()->Db()->fetchAll($sql, array_keys($productIds));
+
+        if(count($purchasePrices)) {
+            foreach($purchasePrices as $prices) {
+                $qty = $productIds[$prices['articleID']];
+                $amountCent = ($prices['purchaseprice'] * 100) * $qty;
+                $consultantTake += $amountCent;
+            }
+        }
+
+        // subtract the take from the charged amount to get the
+        // application fee
+        if($consultantTake <= $chargedAmount) {
+            return ($chargedAmount - $consultantTake);
+        }
+
+        throw new \Exception('The consultant take should always be <= than charged amount');
     }
 }
