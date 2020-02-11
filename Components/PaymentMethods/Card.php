@@ -135,7 +135,7 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
      */
     protected function getApplicationFeeAmount($chargedAmount) {
 
-        $consultantTake = 0;
+        $applicationFee = 0;
 
         // get the `article IDs` for the products in the basket
         $basket = Shopware()->Session()->sOrderVariables['sBasket'];
@@ -160,16 +160,15 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
             foreach($purchasePrices as $prices) {
                 $qty = $productIds[$prices['articleID']];
                 $amountCent = ($prices['purchaseprice'] * 100) * $qty;
-                $consultantTake += $amountCent;
+                $applicationFee += $amountCent;
             }
         }
 
-        // subtract the take from the charged amount to get the
-        // application fee
-        if($consultantTake <= $chargedAmount) {
-            return ($chargedAmount - $consultantTake);
+        // return the application fee
+        if($applicationFee <= $chargedAmount) {
+            return $applicationFee;
         }
 
-        throw new \Exception('The consultant take should always be <= than charged amount');
+        throw new \Exception('The application fee should always be <= than charged amount');
     }
 }
