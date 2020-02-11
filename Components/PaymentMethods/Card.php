@@ -140,25 +140,37 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
         // get the `article IDs` for the products in the basket
         $basket = Shopware()->Session()->sOrderVariables['sBasket'];
 
-        $productIds = [];
+        $basketProducts = [];
 
         if(count($basket['content'])) {
             foreach($basket['content'] as $product) {
-                $productIds[$product['articleID']] = (int) $product['quantity'];
+                $basketProducts[$product['articleID']] = [
+                    'articleID'   => $product['articleID'],
+                    'quantity'    => (int) $product['quantity'],
+                    'ordernumber' => $product['ordernumber']
+                ];
             }
         }
-
         // get the total `take` for the consultant for each product
-        $sql = '
-            SELECT articleID, purchaseprice FROM s_articles_details
-            WHERE articleID IN (?)
-        ';
+        $sql = 'SELECT articleID, purchaseprice FROM s_articles_details WHERE';
+        $count = 1;
+        $parameters = [];
+        foreach($basketProducts as $product) {
+            if($count === 1) {
+                $sql .= ' articleID = :articleID' . $count.' AND ordernumber = :ordernumber' . $count;
+            } else {
+                $sql .= ' OR (articleID = :articleID' . $count.' AND ordernumber = :ordernumber' . $count . ')';
+            }
+            $parameters['articleID' . $count] = $product['articleID'];
+            $parameters['ordernumber' . $count] = $product['ordernumber'];
+            $count++;
+        }
 
-        $purchasePrices = Shopware()->Db()->fetchAll($sql, array_keys($productIds));
+        $purchasePrices = Shopware()->Db()->fetchAll($sql, $parameters);
 
         if(count($purchasePrices)) {
             foreach($purchasePrices as $prices) {
-                $qty = $productIds[$prices['articleID']];
+                $qty = $basketProducts[$prices['articleID']]['quantity'];
                 $amountCent = ($prices['purchaseprice'] * 100) * $qty;
                 $applicationFee += $amountCent;
             }
