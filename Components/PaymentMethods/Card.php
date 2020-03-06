@@ -18,6 +18,8 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
     public function createStripePaymentIntent($amountInCents, $currencyCode)
     {
         Util::initStripeAPI();
+        $pluginConfig = $this->get('plugins')->get('Frontend')->get('StripePayment')->Config();
+        $stripeConnectedAccountId = $pluginConfig->get('stripeConnectedAccountId');
 
         // Determine the card
         $stripeSession = Util::getStripeSession();
@@ -27,7 +29,7 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
 
         $stripeCustomer = Util::getStripeCustomer();
         if (!$stripeCustomer) {
-            $stripeCustomer = Util::createStripeCustomer();
+            $stripeCustomer = Util::createStripeCustomer($stripeConnectedAccountId);
         }
         $user = Shopware()->Session()->sOrderVariables['sUserData'];
         $userEmail = $user['additional']['user']['email'];
@@ -58,7 +60,6 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
         }
 
         // Enable MOTO transaction, if configured and order is placed by shop admin (aka user has logged in via backend)
-        $pluginConfig = $this->get('plugins')->get('Frontend')->get('StripePayment')->Config();
         $isAdminRequest = isset($this->get('session')->Admin) && $this->get('session')->Admin === true;
         if ($isAdminRequest && $pluginConfig->get('allowMotoTransactions')) {
             $paymentIntentConfig['payment_method_options'] = [
@@ -79,7 +80,7 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
             unset($stripeSession->saveCardForFutureCheckouts);
         }
 
-        $paymentIntent = Stripe\PaymentIntent::create($paymentIntentConfig, ['stripe_account' => $pluginConfig->get('stripeConnectedAccountId')]);
+        $paymentIntent = Stripe\PaymentIntent::create($paymentIntentConfig, ['stripe_account' => $stripeConnectedAccountId]);
         if (!$paymentIntent) {
             throw new \Exception($this->getSnippet('payment_error/message/transaction_not_found'));
         }

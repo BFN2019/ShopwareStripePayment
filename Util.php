@@ -183,7 +183,7 @@ class Util
      *
      * @return Stripe\Customer|null
      */
-    public static function createStripeCustomer()
+    public static function createStripeCustomer($connectedStripeAccountId = null)
     {
         self::initStripeAPI();
         $em = Shopware()->Container()->get('models');
@@ -205,6 +205,12 @@ class Util
 
         // Create a new Stripe customer and save it in the user's attributes
         try {
+
+            $options = [];
+            if(!is_null($connectedStripeAccountId)) {
+                $options['stripe_account'] = $connectedStripeAccountId;
+            }
+            
             self::$stripeCustomer = Stripe\Customer::create([
                 'name' => self::getCustomerName(),
                 'description' => self::getCustomerName(),
@@ -212,7 +218,8 @@ class Util
                 'metadata' => [
                     'platform_name' => self::STRIPE_PLATFORM_NAME,
                 ],
-            ]);
+            ], $options);
+            
             $customer->getAttribute()->setStripeCustomerId(self::$stripeCustomer->id);
             $em->flush($customer->getAttribute());
         } catch (\Exception $e) {
