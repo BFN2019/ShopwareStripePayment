@@ -138,9 +138,11 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
 
         $applicationFee = 0;
 
+        // get shipping costs and add them to our application fee 
+        $applicationFee += (Shopware()->Session()->sOrderVariables['sShippingcosts'] * 100);
+
         // get the `article IDs` for the products in the basket
         $basket = Shopware()->Session()->sOrderVariables['sBasket'];
-
         $basketProducts = [];
 
         if(count($basket['content'])) {
