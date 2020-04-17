@@ -147,11 +147,15 @@ class Card extends AbstractStripePaymentIntentPaymentMethod
 
         if(count($basket['content'])) {
             foreach($basket['content'] as $product) {
-                $basketProducts[$product['articleID']] = [
-                    'articleID'   => $product['articleID'],
-                    'quantity'    => (int) $product['quantity'],
-                    'ordernumber' => $product['ordernumber']
-                ];
+                if(!array_key_exists($product['articleID'], $basketProducts)) {
+                   $basketProducts[$product['articleID']] = [
+                        'articleID'   => $product['articleID'],
+                        'quantity'    => (int) $product['quantity'],
+                        'ordernumber' => $product['ordernumber']
+                    ]; 
+                } else {
+                    $basketProducts[$product['articleID']]['quantity'] += (int) $product['quantity'];
+                }
             }
         }
         // get the total `take` for the consultant for each product
